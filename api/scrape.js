@@ -16,7 +16,10 @@ export default async function handler(req, res) {
     '/compliance',
     '/privacy',
     '/pricing',
-    '/about'
+    '/about',
+    '/newsroom',
+    '/news',
+    '/blog'
   ];
 
   const statusUrls = [

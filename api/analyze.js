@@ -38,6 +38,8 @@ export default async function handler(req, res) {
     "employee_count": "string or null",
     "leadership_changes": true or false or null,
     "leadership_notes": "string or null"
+    "layoffs": true or false or null,
+    "layoffs_notes": "string or null"
   },
   "commercial": {
     "pricing_model": "public" or "contact_sales" or "freemium" or "unknown",
@@ -51,6 +53,8 @@ export default async function handler(req, res) {
   "scrape_status": "${scrapeStatus}",
   "scrape_notes": "${scrapeNotes}"
 }
+
+For the operations.layoffs field: only return true if the company themselves announced it via a press release, blog post, or official statement in the scraped text. If only mentioned in third-party news, return null not true.
 
 If a signal cannot be determined from the text, return null for that field. Never guess. Never invent data.
 
