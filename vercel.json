@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/vendor.js": {
+      "maxDuration": 60
+    },
+    "api/scrape.js": {
+      "maxDuration": 30
+    },
+    "api/analyze.js": {
+      "maxDuration": 30
+    }
+  }
+}

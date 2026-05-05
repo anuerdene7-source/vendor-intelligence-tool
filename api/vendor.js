@@ -63,13 +63,56 @@ export default async function handler(req, res) {
 
   score = Math.max(0, Math.min(100, score));
 
-  const verdict = score >= 70 ? 'LOW RISK' : score >= 40 ? 'REVIEW' : 'STOP';
+ // Security fallback: if all security signals are null and scrape did not fully fail,
+  // run a targeted Jina search to find the vendor's trust documentation and try again
+  const sec = result ? result.security : null;
+  const securityEmpty = sec && 
+    sec.soc2 === null && 
+    sec.iso27001 === null && 
+    sec.hipaa === null && 
+    sec.fedramp === null;
 
-  return res.status(200).json({
-    domain,
-    score,
-    verdict,
-    scannedAt: new Date().toISOString(),
-    ...analyzeData
-  });
-}
+  if (securityEmpty && scrapeData.scrapeStatus !== 'failed') {
+    console.log(`Security signals empty for ${domain}, running search fallback...`);
+    try {
+      const searchUrl = `https://s.jina.ai/${domain} SOC2 security trust compliance certification`;
+      const searchRes = await fetch(searchUrl, {
+        headers: { 'Accept': 'text/plain' }
+      });
+
+      if (searchRes.ok) {
+        const searchText = await searchRes.text();
+        if (searchText && searchText.length > 200) {
+          // Run a second Claude extraction pass with the search results
+          const fallbackRes = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              domain,
+              text: searchText,
+              scrapeStatus: 'partial',
+              scrapeNotes: `Standard paths returned no security signals. Search fallback found additional content for ${domain}.`
+            })
+          });
+
+          const fallbackData = await fallbackRes.json();
+
+          // Only use fallback result if it found something standard scrape missed
+          if (fallbackData.result && fallbackData.result.security && fallbackData.result.security.soc2 !== null) {
+            console.log(`Search fallback found security signals for ${domain}`);
+            
+            // Merge fallback security and compliance into original result
+            analyzeData.result.security = fallbackData.result.security;
+            if (!analyzeData.result.compliance.gdpr_mechanism && fallbackData.result.compliance.gdpr_mechanism) {
+              analyzeData.result.compliance = fallbackData.result.compliance;
+            }
+            analyzeData.result.scrape_notes = `Security documentation found via search fallback. Standard paths returned no security signals.`;
+
+            // Recalculate score with updated security signals
+            const s2 = analyzeData.result.security;
+            score = 100;
+            if (!s2.soc2) score -= 25;
+            else if (s2.soc2_type !== 'II') score -= 10;
+            if (!s2.iso27001) score -= 10;
+            if (!result.operations.status_page_found) score -= 15;
+            if (result.operations.leadership_changes) score -= 10;

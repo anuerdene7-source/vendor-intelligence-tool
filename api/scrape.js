@@ -74,11 +74,36 @@ export default async function handler(req, res) {
     }
   }
 
-  if (successCount === 0) {
+  if (successCount === 0 || combinedText.length < 500) {
+    console.log(`Standard paths failed for ${domain}, trying Jina search fallback...`);
+    try {
+      const searchUrl = `https://s.jina.ai/${domain} security compliance SOC2 trust privacy`;
+      const searchRes = await fetch(searchUrl, {
+        headers: { 'Accept': 'text/plain' }
+      });
+      if (searchRes.ok) {
+        const searchText = await searchRes.text();
+        if (searchText && searchText.length > 200) {
+          combinedText += `\n\n--- /search-fallback ---\n${searchText.slice(0, 5000)}`;
+          successCount++;
+          return res.status(200).json({
+            domain,
+            scrapeStatus: 'partial',
+            scrapeNotes: `Standard paths returned no content. Search fallback used to find security documentation for ${domain}.`,
+            statusPageFound,
+            statusPageUrl,
+            text: combinedText
+          });
+        }
+      }
+    } catch (err) {
+      console.error(`Search fallback failed for ${domain}:`, err.message);
+    }
+
     return res.status(200).json({
       domain,
       scrapeStatus: 'failed',
-      scrapeNotes: 'No content retrieved from any path. Manual review required.',
+      scrapeNotes: 'No content retrieved from standard paths or search fallback. Manual review required.',
       text: ''
     });
   }
