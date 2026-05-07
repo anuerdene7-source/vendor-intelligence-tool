@@ -16,7 +16,8 @@ export default async function handler(req, res) {
 
   const statusUrls = [
     `https://status.${domain}`,
-    `https://${domain}/status`
+    `https://${domain}/status`,
+    `https://trust.${domain}`
   ];
 
   let combinedText = '';
