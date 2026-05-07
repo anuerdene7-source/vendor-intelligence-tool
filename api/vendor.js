@@ -11,13 +11,20 @@ export default async function handler(req, res) {
   // ─── STEP 1: SCRAPE (parallel, 10s timeout per request) ──────────────────
 
   const paths = [
-    '/security', '/trust', '/compliance', '/privacy', '/pricing', '/about'
+    '/security', '/trust', '/trust/security', '/compliance',
+    '/privacy', '/pricing', '/about', '/legal/security', '/legal/privacy'
   ];
 
   const statusUrls = [
     `https://status.${domain}`,
-    `https://${domain}/status`,
-    `https://trust.${domain}`
+    `https://${domain}/status`
+  ];
+
+  // Many vendors host trust docs at non-standard subdomains
+  const trustSubdomains = [
+    `https://trust.${domain}`,
+    `https://trust-portal.${domain}`,
+    `https://security.${domain}`
   ];
 
   let combinedText = '';
@@ -27,6 +34,7 @@ export default async function handler(req, res) {
 
   const allRequests = [
     ...statusUrls.map(url => ({ type: 'status', url, jinaUrl: `https://r.jina.ai/${url}` })),
+    ...trustSubdomains.map(url => ({ type: 'path', path: url, jinaUrl: `https://r.jina.ai/${url}` })),
     ...paths.map(path => ({ type: 'path', path, jinaUrl: `https://r.jina.ai/https://${domain}${path}` }))
   ];
 
@@ -43,6 +51,7 @@ export default async function handler(req, res) {
     })
   );
 
+  // Process status page results
   for (const r of results.slice(0, statusUrls.length)) {
     if (r.status === 'fulfilled' && r.value) {
       const t = r.value.text;
@@ -56,6 +65,7 @@ export default async function handler(req, res) {
     }
   }
 
+  // Process trust subdomains and path results together
   for (const r of results.slice(statusUrls.length)) {
     if (r.status === 'fulfilled' && r.value) {
       combinedText += `\n\n--- ${r.value.path} ---\n${r.value.text.slice(0, 3000)}`;
@@ -66,16 +76,57 @@ export default async function handler(req, res) {
   let scrapeStatus = successCount >= 3 ? 'success' : successCount > 0 ? 'partial' : 'failed';
   let scrapeNotes = `Retrieved content from ${successCount} paths. Status page: ${statusPageFound ? statusPageUrl : 'not found'}.`;
 
-  if (successCount === 0 || combinedText.length < 500) {
-    scrapeStatus = 'failed';
-    scrapeNotes = 'No content retrieved from standard paths. Manual review required.';
+  // ─── OPTION A: If direct scrape got nothing, try Jina search immediately ──
+
+  if (successCount === 0 || combinedText.length < 100) {
+    console.log(`Direct scrape blocked for ${domain}, trying Jina search...`);
+    try {
+      const searchQueries = [
+        `${domain} SOC2 security compliance trust certifications`,
+        `${domain} privacy GDPR data processing agreement`
+      ];
+
+      const searchResults = await Promise.allSettled(
+        searchQueries.map(async (query) => {
+          const r = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
+            headers: {
+              'Accept': 'text/plain',
+              'Authorization': `Bearer ${process.env.JINA_API_KEY}`
+            },
+            signal: AbortSignal.timeout(12000)
+          });
+          if (!r.ok) return null;
+          const text = await r.text();
+          return text && text.length > 200 ? text : null;
+        })
+      );
+
+      for (const r of searchResults) {
+        if (r.status === 'fulfilled' && r.value) {
+          combinedText += `\n\n--- search results ---\n${r.value.slice(0, 4000)}`;
+          successCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        scrapeStatus = 'partial';
+        scrapeNotes = `Direct scrape blocked by vendor. Content retrieved via search index for ${domain}.`;
+      } else {
+        scrapeStatus = 'failed';
+        scrapeNotes = `Unable to retrieve public data for ${domain}. Vendor blocks automated scraping. Request security documentation directly from vendor.`;
+      }
+    } catch (err) {
+      console.error(`Search fallback failed for ${domain}:`, err.message);
+      scrapeStatus = 'failed';
+      scrapeNotes = `Unable to retrieve public data for ${domain}. Request security documentation directly from vendor.`;
+    }
   }
 
   // ─── STEP 2: ANALYZE (25s timeout) ───────────────────────────────────────
 
   let analyzeResult = null;
 
-  if (combinedText.length > 200) {
+  if (combinedText.length > 100) {
     const prompt = `You are a vendor risk analyst. Given the following scraped text from a SaaS vendor's public pages, extract the signals below and return them as a JSON object only. No other text. No markdown. No backticks. Just the raw JSON object.
 
 {
@@ -178,7 +229,9 @@ ${combinedText.slice(0, 12000)}`;
 
   score = Math.max(0, Math.min(100, score));
 
-  // ─── STEP 4: SEARCH FALLBACK (10s + 15s timeouts) ────────────────────────
+  // ─── STEP 4: SECURITY SIGNAL FALLBACK ────────────────────────────────────
+  // If we got a card but security signals are all null, do one more targeted
+  // search specifically for security certifications
 
   const sec = analyzeResult ? analyzeResult.security : null;
   const securityEmpty = sec &&
@@ -188,9 +241,9 @@ ${combinedText.slice(0, 12000)}`;
     sec.fedramp === null;
 
   if (securityEmpty && scrapeStatus !== 'failed') {
-    console.log(`Security signals empty for ${domain}, running search fallback...`);
+    console.log(`Security signals empty for ${domain}, running targeted security search...`);
     try {
-      const searchUrl = `https://s.jina.ai/${encodeURIComponent(domain + ' SOC2 security trust compliance certification')}`;
+      const searchUrl = `https://s.jina.ai/${encodeURIComponent(domain + ' SOC2 Type II certified security trust compliance')}`;
       const searchRes = await fetch(searchUrl, {
         headers: {
           'Accept': 'text/plain',
@@ -228,12 +281,11 @@ Text: ${searchText.slice(0, 6000)}`;
           const fallbackData = JSON.parse(cleanFallback);
 
           if (fallbackData.security && fallbackData.security.soc2 !== null) {
-            console.log(`Search fallback found security signals for ${domain}`);
+            console.log(`Security search found signals for ${domain}`);
             analyzeResult.security = fallbackData.security;
             if (!analyzeResult.compliance.gdpr_mechanism && fallbackData.compliance && fallbackData.compliance.gdpr_mechanism) {
               analyzeResult.compliance = fallbackData.compliance;
             }
-            analyzeResult.scrape_notes = `Security found via search fallback.`;
 
             const s2 = analyzeResult.security;
             const o2 = analyzeResult.operations || {};
@@ -256,7 +308,7 @@ Text: ${searchText.slice(0, 6000)}`;
         }
       }
     } catch (err) {
-      console.error(`Search fallback timed out or failed for ${domain}:`, err.message);
+      console.error(`Security search timed out for ${domain}:`, err.message);
     }
   }
 
