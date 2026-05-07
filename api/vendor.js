@@ -8,17 +8,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No domain provided' });
   }
 
-  // ─── STEP 1: SCRAPE ───────────────────────────────────────────────────────
+  // ─── STEP 1: SCRAPE (parallel, 10s timeout per request) ──────────────────
 
   const paths = [
-    '/security', '/trust', '/security-compliance', '/compliance',
-    '/privacy', '/pricing', '/about', '/newsroom', '/news', '/blog'
+    '/security', '/trust', '/compliance', '/privacy', '/pricing', '/about'
   ];
 
   const statusUrls = [
     `https://status.${domain}`,
-    `https://${domain}/status`,
-    `https://${domain}/system-status`
+    `https://${domain}/status`
   ];
 
   let combinedText = '';
@@ -26,42 +24,41 @@ export default async function handler(req, res) {
   let statusPageFound = false;
   let statusPageUrl = null;
 
-  // Check status page first
-  for (const statusUrl of statusUrls) {
-    try {
-      const response = await fetch(`https://r.jina.ai/${statusUrl}`, {
-        headers: { 'Accept': 'text/plain' }
+  const allRequests = [
+    ...statusUrls.map(url => ({ type: 'status', url, jinaUrl: `https://r.jina.ai/${url}` })),
+    ...paths.map(path => ({ type: 'path', path, jinaUrl: `https://r.jina.ai/https://${domain}${path}` }))
+  ];
+
+  const results = await Promise.allSettled(
+    allRequests.map(async (r) => {
+      const response = await fetch(r.jinaUrl, {
+        headers: { 'Accept': 'text/plain' },
+        signal: AbortSignal.timeout(10000)
       });
-      if (response.ok) {
-        const text = await response.text();
-        if (text && text.length > 200 && !text.includes('404') && !text.includes('Not Found')) {
-          combinedText += `\n\n--- /status ---\n${text.slice(0, 3000)}`;
-          statusPageFound = true;
-          statusPageUrl = statusUrl;
-          successCount++;
-          break;
-        }
+      if (!response.ok) return null;
+      const text = await response.text();
+      if (!text || text.length < 200) return null;
+      return { ...r, text };
+    })
+  );
+
+  for (const r of results.slice(0, statusUrls.length)) {
+    if (r.status === 'fulfilled' && r.value) {
+      const t = r.value.text;
+      if (!t.includes('404') && !t.includes('Not Found')) {
+        combinedText += `\n\n--- /status ---\n${t.slice(0, 3000)}`;
+        statusPageFound = true;
+        statusPageUrl = r.value.url;
+        successCount++;
+        break;
       }
-    } catch (err) {
-      console.error(`Status page check failed ${statusUrl}:`, err.message);
     }
   }
 
-  // Scrape standard paths
-  for (const path of paths) {
-    try {
-      const response = await fetch(`https://r.jina.ai/https://${domain}${path}`, {
-        headers: { 'Accept': 'text/plain' }
-      });
-      if (response.ok) {
-        const text = await response.text();
-        if (text && text.length > 200) {
-          combinedText += `\n\n--- ${path} ---\n${text.slice(0, 3000)}`;
-          successCount++;
-        }
-      }
-    } catch (err) {
-      console.error(`Scrape failed ${domain}${path}:`, err.message);
+  for (const r of results.slice(statusUrls.length)) {
+    if (r.status === 'fulfilled' && r.value) {
+      combinedText += `\n\n--- ${r.value.path} ---\n${r.value.text.slice(0, 3000)}`;
+      successCount++;
     }
   }
 
@@ -73,7 +70,7 @@ export default async function handler(req, res) {
     scrapeNotes = 'No content retrieved from standard paths. Manual review required.';
   }
 
-  // ─── STEP 2: ANALYZE ──────────────────────────────────────────────────────
+  // ─── STEP 2: ANALYZE (25s timeout) ───────────────────────────────────────
 
   let analyzeResult = null;
 
@@ -137,7 +134,8 @@ ${combinedText.slice(0, 12000)}`;
           model: 'claude-sonnet-4-5',
           max_tokens: 1000,
           messages: [{ role: 'user', content: prompt }]
-        })
+        }),
+        signal: AbortSignal.timeout(25000)
       });
 
       const data = await response.json();
@@ -179,7 +177,7 @@ ${combinedText.slice(0, 12000)}`;
 
   score = Math.max(0, Math.min(100, score));
 
-  // ─── STEP 4: SEARCH FALLBACK ──────────────────────────────────────────────
+  // ─── STEP 4: SEARCH FALLBACK (10s + 15s timeouts) ────────────────────────
 
   const sec = analyzeResult ? analyzeResult.security : null;
   const securityEmpty = sec &&
@@ -196,7 +194,8 @@ ${combinedText.slice(0, 12000)}`;
         headers: {
           'Accept': 'text/plain',
           'Authorization': `Bearer ${process.env.JINA_API_KEY}`
-        }
+        },
+        signal: AbortSignal.timeout(10000)
       });
 
       if (searchRes.ok) {
@@ -205,7 +204,7 @@ ${combinedText.slice(0, 12000)}`;
           const fallbackPrompt = `You are a vendor risk analyst. Extract security signals from this text and return JSON only. No markdown. No backticks.
 {"security":{"soc2":true/false/null,"soc2_type":"I"/"II"/null,"iso27001":true/false/null,"hipaa":true/false/null,"fedramp":true/false/null,"pci":true/false/null,"notes":"string or null"},"compliance":{"gdpr_mechanism":"string or null","data_residency":"US"/"EU"/"both"/"unknown","privacy_policy_updated":"string or null","dpa_available":true/false/null}}
 Never guess. Return null if not found.
-Text: ${searchText.slice(0, 8000)}`;
+Text: ${searchText.slice(0, 6000)}`;
 
           const fallbackClaudeRes = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
@@ -218,7 +217,8 @@ Text: ${searchText.slice(0, 8000)}`;
               model: 'claude-sonnet-4-5',
               max_tokens: 500,
               messages: [{ role: 'user', content: fallbackPrompt }]
-            })
+            }),
+            signal: AbortSignal.timeout(15000)
           });
 
           const fallbackClaudeData = await fallbackClaudeRes.json();
@@ -232,7 +232,7 @@ Text: ${searchText.slice(0, 8000)}`;
             if (!analyzeResult.compliance.gdpr_mechanism && fallbackData.compliance && fallbackData.compliance.gdpr_mechanism) {
               analyzeResult.compliance = fallbackData.compliance;
             }
-            analyzeResult.scrape_notes = `Security documentation found via search fallback. Standard paths returned no security signals.`;
+            analyzeResult.scrape_notes = `Security found via search fallback.`;
 
             const s2 = analyzeResult.security;
             const o2 = analyzeResult.operations || {};
@@ -255,7 +255,7 @@ Text: ${searchText.slice(0, 8000)}`;
         }
       }
     } catch (err) {
-      console.error(`Search fallback error for ${domain}:`, err.message);
+      console.error(`Search fallback timed out or failed for ${domain}:`, err.message);
     }
   }
 
