@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vendor Intelligence — Postscript G&A</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #6D28D9;
+      --purple-light: #EDE9FE;
+      --purple-mid: #DDD6FE;
+      --black: #0D0D0D;
+      --white: #FFFFFF;
+      --bg: #F5F5F4;
+      --surface: #FFFFFF;
+      --border: #E5E5E3;
+      --border-dark: #D1D1CE;
+      --text: #111110;
+      --text-dim: #57574F;
+      --text-muted: #A09F99;
+      --green: #15803D;
+      --amber: #92400E;
+      --red: #B91C1C;
+      --green-bg: #F0FDF4;
+      --amber-bg: #FFFBEB;
+      --red-bg: #FEF2F2;
+      --green-border: #BBF7D0;
+      --amber-border: #FDE68A;
+      --red-border: #FECACA;
+      --font: 'Inter', sans-serif;
+      --display: 'Bricolage Grotesque', sans-serif;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--black);
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-badge {
+      background: var(--purple);
+      color: white;
+      font-family: var(--font);
+      font-weight: 600;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.01em;
+    }
+
+    .logo-label {
+      color: #888;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .header-pill {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #888;
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* LAYOUT */
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      min-height: calc(100vh - 52px);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sidebar-section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .sidebar-hint {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .domain-textarea {
+      width: 100%;
+      height: 180px;
+      background: var(--bg);
+      border: 1.5px solid var(--border-dark);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px;
+      color: var(--text);
+      line-height: 1.8;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .domain-textarea:focus { border-color: var(--purple); }
+    .domain-textarea::placeholder { color: var(--text-muted); }
+
+    .scan-btn {
+      width: 100%;
+      background: var(--purple);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 11px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      letter-spacing: 0.01em;
+    }
+
+    .scan-btn:hover { opacity: 0.88; }
+    .scan-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .queue-status {
+      font-size: 12px;
+      color: var(--text-muted);
+      min-height: 18px;
+    }
+
+    .queue-status b { color: var(--text-dim); font-weight: 600; }
+
+    .divider { height: 1px; background: var(--border); }
+
+    .action-btns {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .action-btns.visible { display: flex; }
+
+    .export-btn {
+      width: 100%;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1.5px solid var(--border-dark);
+      border-radius: 6px;
+      padding: 9px;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .export-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+    /* MAIN */
+    .content { padding: 24px 28px; overflow-y: auto; }
+
+    /* RISK SUMMARY BAR */
+    .risk-bar {
+      display: none;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      align-items: center;
+      gap: 0;
+    }
+
+    .risk-bar.visible { display: flex; }
+
+    .risk-bar-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-right: 20px;
+      white-space: nowrap;
+    }
+
+    .risk-counts {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .risk-count {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .risk-count.green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    .risk-count.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+    .risk-count.red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+
+    .risk-count-label { font-size: 11px; font-weight: 500; opacity: 0.75; }
+
+    /* PROGRESS BAR */
+    .risk-bar-progress {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-left: 20px;
+      display: flex;
+    }
+
+    .progress-green { background: var(--green); transition: width 0.5s ease; }
+    .progress-amber { background: var(--amber); transition: width 0.5s ease; }
+    .progress-red { background: var(--red); transition: width 0.5s ease; }
+
+    /* EMPTY STATE */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 320px;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      gap: 8px;
+    }
+
+    .empty-icon { font-size: 32px; margin-bottom: 4px; }
+
+    /* CARDS */
+    .cards-list { display: flex; flex-direction: column; gap: 16px; }
+
+    .vendor-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-domain {
+      font-family: var(--display);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 3px;
+      letter-spacing: -0.01em;
+    }
+
+    .card-scanned { font-size: 11px; color: var(--text-muted); }
+
+    .score-block { text-align: right; }
+
+    .score-number {
+      font-family: var(--display);
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 5px;
+      letter-spacing: -0.02em;
+    }
+
+    .score-number.green { color: var(--green); }
+    .score-number.amber { color: var(--amber); }
+    .score-number.red { color: var(--red); }
+
+    .verdict-badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .verdict-badge.green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    .verdict-badge.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+    .verdict-badge.red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+
+    .vuln-bar {
+      padding: 10px 22px;
+      background: var(--red-bg);
+      border-bottom: 1px solid var(--red-border);
+      font-size: 12px;
+      color: var(--red);
+      display: flex;
+      gap: 8px;
+    }
+
+    .signal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .signal-box {
+      padding: 14px 18px;
+      border-right: 1px solid var(--border);
+    }
+
+    .signal-box:last-child { border-right: none; }
+
+    .signal-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .signal-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3.5px 0;
+      font-size: 11.5px;
+      border-bottom: 1px solid var(--bg);
+    }
+
+    .signal-row:last-child { border-bottom: none; }
+    .signal-key { color: var(--text-dim); }
+
+    .sv { font-weight: 600; font-size: 11px; }
+    .sv.yes { color: var(--green); }
+    .sv.no { color: var(--red); }
+    .sv.warn { color: var(--amber); }
+    .sv.dim { color: var(--text-muted); font-weight: 400; }
+    .sv.neutral { color: var(--text); font-weight: 500; }
+
+    .card-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-summary {
+      padding: 14px 18px;
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+    }
+
+    .card-actions { padding: 14px 18px; }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+    }
+
+    .summary-text { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+
+    .action-item {
+      display: flex;
+      gap: 7px;
+      padding: 4px 0;
+      font-size: 11.5px;
+      color: var(--text-dim);
+      line-height: 1.5;
+      border-bottom: 1px solid var(--bg);
+    }
+
+    .action-item:last-child { border-bottom: none; }
+    .action-arrow { color: var(--purple); flex-shrink: 0; font-weight: 600; }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 18px;
+      background: var(--bg);
+      font-size: 11px;
+      color: var(--text-muted);
+      gap: 16px;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    .status-dot.success { background: var(--green); }
+    .status-dot.partial { background: var(--amber); }
+    .status-dot.failed { background: var(--red); }
+
+    /* LOADING */
+    .loading-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid var(--border);
+      border-top-color: var(--purple);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-card {
+      background: var(--red-bg);
+      border: 1px solid var(--red-border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 12px;
+      color: var(--red);
+    }
+
+    .card-anim { animation: fadeUp 0.3s ease; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <span class="logo-badge">Postscript</span>
+      <span class="logo-label">Vendor Intelligence</span>
+    </div>
+    <div class="header-pill">G&A Internal Tool</div>
+  </header>
+
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="sidebar-section-label">Domains to scan</div>
+      <div class="sidebar-hint">One domain per line. Results appear as each vendor is scanned.</div>
+      <textarea
+        class="domain-textarea"
+        id="domainInput"
+        placeholder="notion.so&#10;linear.app&#10;rippling.com&#10;gong.io"
+        spellcheck="false"
+        autocorrect="off"
+      ></textarea>
+      <button class="scan-btn" id="scanBtn" onclick="runScan()">Run Scan</button>
+      <div class="queue-status" id="queueStatus"></div>
+      <div class="divider"></div>
+      <div class="action-btns" id="actionBtns">
+        <button class="export-btn visible-on-results" id="exportBtn" onclick="exportCSV()">↓ Save as CSV</button>
+        <button class="export-btn visible-on-results" id="emailBtn" onclick="sendEmail()">✉ Send via email</button>
+      </div>
+    </aside>
+
+    <div class="content" id="content">
+
+      <div class="risk-bar" id="riskBar">
+        <div class="risk-bar-title">Scan summary</div>
+        <div class="risk-counts">
+          <div class="risk-count green" id="countGreen"><span id="numGreen">0</span><span class="risk-count-label">Low risk</span></div>
+          <div class="risk-count amber" id="countAmber"><span id="numAmber">0</span><span class="risk-count-label">Review</span></div>
+          <div class="risk-count red" id="countRed"><span id="numRed">0</span><span class="risk-count-label">Stop</span></div>
+        </div>
+        <div class="risk-bar-progress">
+          <div class="progress-green" id="progGreen" style="width:0%"></div>
+          <div class="progress-amber" id="progAmber" style="width:0%"></div>
+          <div class="progress-red" id="progRed" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">⬡</div>
+        <div>Enter vendor domains on the left and run a scan.</div>
+        <div style="font-size:11px; margin-top:2px;">Security, compliance, ownership, and operating health — all from public sources.</div>
+      </div>
+
+      <div class="cards-list" id="cardsList"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const input = document.getElementById('domainInput');
+    const btn = document.getElementById('scanBtn');
+    const cardsList = document.getElementById('cardsList');
+    const emptyState = document.getElementById('emptyState');
+    const queueStatus = document.getElementById('queueStatus');
+    const riskBar = document.getElementById('riskBar');
+    const actionBtns = document.getElementById('actionBtns');
+
+    let allResults = [];
+
+    function scoreClass(score) {
+      if (score >= 70) return 'green';
+      if (score >= 40) return 'amber';
+      return 'red';
+    }
+
+    function sig(val) {
+      if (val === true) return `<span class="sv yes">Yes</span>`;
+      if (val === false) return `<span class="sv no">No</span>`;
+      return `<span class="sv dim">--</span>`;
+    }
+
+    function txt(val) {
+      if (val && val !== 'unknown') return `<span class="sv neutral">${val}</span>`;
+      return `<span class="sv dim">--</span>`;
+    }
+
+    function flag(val) {
+      if (val === true) return `<span class="sv no">Flagged</span>`;
+      return `<span class="sv dim">None found</span>`;
+    }
+
+    function pricingVal(val) {
+      const map = { public: 'Public', freemium: 'Freemium', contact_sales: 'Contact sales', unknown: '--' };
+      const cls = (val === 'public' || val === 'freemium') ? 'yes' : 'dim';
+      return `<span class="sv ${cls}">${map[val] || '--'}</span>`;
+    }
+
+    function ownershipVal(val) {
+      const map = { public: 'Public co.', pe_owned: 'PE-owned', vc_backed: 'VC-backed', bootstrapped: 'Bootstrapped', unknown: '--' };
+      const cls = val === 'pe_owned' ? 'warn' : val === 'unknown' ? 'dim' : 'neutral';
+      return `<span class="sv ${cls}">${map[val] || '--'}</span>`;
+    }
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function updateRiskBar() {
+      const completed = allResults.filter(r => r && r.score !== undefined);
+      if (completed.length === 0) return;
+
+      const green = completed.filter(r => r.score >= 70).length;
+      const amber = completed.filter(r => r.score >= 40 && r.score < 70).length;
+      const red = completed.filter(r => r.score < 40).length;
+      const total = completed.length;
+
+      document.getElementById('numGreen').textContent = green;
+      document.getElementById('numAmber').textContent = amber;
+      document.getElementById('numRed').textContent = red;
+      document.getElementById('progGreen').style.width = `${(green/total)*100}%`;
+      document.getElementById('progAmber').style.width = `${(amber/total)*100}%`;
+      document.getElementById('progRed').style.width = `${(red/total)*100}%`;
+
+      riskBar.classList.add('visible');
+    }
+
+    function buildCard(data) {
+      const r = data.result;
+      const cls = scoreClass(data.score);
+      const s = r.security || {};
+      const o = r.operations || {};
+      const c = r.commercial || {};
+      const comp = r.compliance || {};
+
+      const actions = (r.recommended_actions || [])
+        .map(a => `<div class="action-item"><span class="action-arrow">→</span><span>${a}</span></div>`)
+        .join('');
+
+      const hasVuln = s.notes && (s.notes.toLowerCase().includes('cve') || s.notes.toLowerCase().includes('breach'));
+      const vulnBar = hasVuln ? `<div class="vuln-bar">⚠ <span>${s.notes}</span></div>` : '';
+
+      const scrapeStatus = r.scrape_status || 'success';
+
+      return `
+        <div class="vendor-card card-anim">
+          <div class="card-header">
+            <div>
+              <div class="card-domain">${data.domain}</div>
+              <div class="card-scanned">Scanned ${formatDate(data.scannedAt)}</div>
+            </div>
+            <div class="score-block">
+              <div class="score-number ${cls}">${data.score}</div>
+              <div class="verdict-badge ${cls}">${data.verdict}</div>
+            </div>
+          </div>
+
+          ${vulnBar}
+
+          <div class="signal-grid">
+            <div class="signal-box">
+              <div class="signal-label">Security</div>
+              <div class="signal-row"><span class="signal-key">SOC 2</span>${sig(s.soc2)}</div>
+              <div class="signal-row"><span class="signal-key">Type</span>${txt(s.soc2_type)}</div>
+              <div class="signal-row"><span class="signal-key">ISO 27001</span>${sig(s.iso27001)}</div>
+              <div class="signal-row"><span class="signal-key">HIPAA</span>${sig(s.hipaa)}</div>
+              <div class="signal-row"><span class="signal-key">FedRAMP</span>${sig(s.fedramp)}</div>
+            </div>
+            <div class="signal-box">
+              <div class="signal-label">Compliance</div>
+              <div class="signal-row"><span class="signal-key">GDPR</span>${txt(comp.gdpr_mechanism)}</div>
+              <div class="signal-row"><span class="signal-key">DPA</span>${sig(comp.dpa_available)}</div>
+              <div class="signal-row"><span class="signal-key">Residency</span>${txt(comp.data_residency)}</div>
+            </div>
+            <div class="signal-box">
+              <div class="signal-label">Operations</div>
+              <div class="signal-row"><span class="signal-key">Status page</span>${sig(o.status_page_found)}</div>
+              <div class="signal-row"><span class="signal-key">Layoffs</span>${flag(o.layoffs)}</div>
+              <div class="signal-row"><span class="signal-key">Leadership</span>${flag(o.leadership_changes)}</div>
+              <div class="signal-row"><span class="signal-key">Breach</span>${flag(o.recent_breach)}</div>
+            </div>
+            <div class="signal-box">
+              <div class="signal-label">Commercial</div>
+              <div class="signal-row"><span class="signal-key">Pricing</span>${pricingVal(c.pricing_model)}</div>
+              <div class="signal-row"><span class="signal-key">Ownership</span>${ownershipVal(c.ownership_type)}</div>
+              <div class="signal-row"><span class="signal-key">Round</span>${txt(c.latest_round)}</div>
+              <div class="signal-row"><span class="signal-key">Founded</span>${txt(c.founded_year)}</div>
+            </div>
+          </div>
+
+          <div class="card-bottom">
+            <div class="card-summary">
+              <div class="section-label">CFO Summary</div>
+              <div class="summary-text">${r.summary || 'No summary available.'}</div>
+            </div>
+            <div class="card-actions">
+              <div class="section-label">Recommended Actions</div>
+              ${actions || '<div class="action-item"><span class="action-arrow">→</span><span>No actions flagged.</span></div>'}
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span><span class="status-dot ${scrapeStatus}"></span>Scrape: ${scrapeStatus}</span>
+            <span style="text-align:right; max-width:70%">${r.scrape_notes || ''}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    async function scanDomain(domain, index, total) {
+      queueStatus.innerHTML = `Scanning <b>${index + 1} of ${total}</b>: ${domain}`;
+
+      const loadingEl = document.createElement('div');
+      loadingEl.className = 'loading-card';
+      loadingEl.id = `loading-${domain}`;
+      loadingEl.innerHTML = `<div class="spinner"></div><span>Scanning ${domain}...</span>`;
+      cardsList.appendChild(loadingEl);
+
+      try {
+        const res = await fetch('/api/vendor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.result) throw new Error(data.error || 'Scan failed');
+
+        allResults.push(data);
+        updateRiskBar();
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = buildCard(data);
+        loadingEl.replaceWith(wrapper.firstElementChild);
+
+      } catch (err) {
+        allResults.push({ domain, error: err.message });
+        loadingEl.outerHTML = `<div class="error-card"><b>${domain}:</b> ${err.message}</div>`;
+      }
+    }
+
+    async function runScan() {
+      const raw = input.value.trim();
+      if (!raw) return;
+
+      const domains = raw
+        .split('\n')
+        .map(d => d.trim().replace(/^https?:\/\//, '').replace(/\/$/, ''))
+        .filter(Boolean);
+
+      if (domains.length === 0) return;
+
+      btn.disabled = true;
+      emptyState.style.display = 'none';
+      cardsList.innerHTML = '';
+      riskBar.classList.remove('visible');
+      if (actionBtns) actionBtns.classList.remove('visible');
+      allResults = [];
+
+      for (let i = 0; i < domains.length; i++) {
+        await scanDomain(domains[i], i, domains.length);
+      }
+
+      queueStatus.innerHTML = `Done — <b>${domains.length} vendor${domains.length > 1 ? 's' : ''} scanned</b>`;
+      btn.disabled = false;
+      if (allResults.length > 0 && actionBtns) actionBtns.classList.add('visible');
+    }
+
+    function exportCSV() {
+      const rows = [
+        ['Domain', 'Score', 'Verdict', 'SOC2', 'SOC2 Type', 'ISO27001', 'HIPAA', 'FedRAMP', 'GDPR Mechanism', 'DPA Available', 'Data Residency', 'Status Page', 'Layoffs', 'Leadership Changes', 'Pricing', 'Ownership', 'Latest Round', 'Founded', 'Summary', 'Scanned At']
+      ];
+
+      allResults.forEach(d => {
+        if (d.error) {
+          rows.push([d.domain, 'ERROR', d.error, ...Array(17).fill('')]);
+          return;
+        }
+        const r = d.result;
+        const s = r.security || {};
+        const o = r.operations || {};
+        const c = r.commercial || {};
+        const comp = r.compliance || {};
+        rows.push([
+          d.domain,
+          d.score,
+          d.verdict,
+          s.soc2 === true ? 'Yes' : s.soc2 === false ? 'No' : '--',
+          s.soc2_type || '--',
+          s.iso27001 === true ? 'Yes' : s.iso27001 === false ? 'No' : '--',
+          s.hipaa === true ? 'Yes' : s.hipaa === false ? 'No' : '--',
+          s.fedramp === true ? 'Yes' : s.fedramp === false ? 'No' : '--',
+          comp.gdpr_mechanism || '--',
+          comp.dpa_available === true ? 'Yes' : comp.dpa_available === false ? 'No' : '--',
+          comp.data_residency || '--',
+          o.status_page_found === true ? 'Yes' : 'No',
+          o.layoffs === true ? 'Flagged' : 'None found',
+          o.leadership_changes === true ? 'Flagged' : 'None found',
+          c.pricing_model || '--',
+          c.ownership_type || '--',
+          c.latest_round || '--',
+          c.founded_year || '--',
+          `"${(r.summary || '').replace(/"/g, "'")}"`,
+          d.scannedAt
+        ]);
+      });
+
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vendor-scan-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    function sendEmail() {
+      const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const completed = allResults.filter(r => r.score !== undefined);
+
+      const subject = `Vendor Risk Scan — ${completed.length} vendor${completed.length !== 1 ? 's' : ''} — ${date}`;
+
+      const stop = completed.filter(r => r.score < 40);
+      const review = completed.filter(r => r.score >= 40 && r.score < 70);
+      const low = completed.filter(r => r.score >= 70);
+
+      let body = `VENDOR RISK SCAN — ${date}\n`;
+      body += `Postscript G&A Vendor Intelligence Tool\n`;
+      body += `${'─'.repeat(48)}\n\n`;
+      body += `SUMMARY\n`;
+      body += `${low.length} Low Risk  |  ${review.length} Review  |  ${stop.length} Stop\n\n`;
+
+      if (stop.length > 0) {
+        body += `⛔ STOP — DO NOT PROCEED WITHOUT REVIEW\n`;
+        stop.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; });
+        body += '\n';
+      }
+
+      if (review.length > 0) {
+        body += `⚠ REVIEW REQUIRED\n`;
+        review.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; });
+        body += '\n';
+      }
+
+      if (low.length > 0) {
+        body += `✓ LOW RISK\n`;
+        low.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; });
+        body += '\n';
+      }
+
+      body += `${'─'.repeat(48)}\n\n`;
+      body += `VENDOR DETAILS\n\n`;
+
+      completed.forEach(d => {
+        const r = d.result;
+        const s = r.security || {};
+        const o = r.operations || {};
+        const c = r.commercial || {};
+        const comp = r.compliance || {};
+
+        body += `${d.domain.toUpperCase()} — ${d.score}/100 — ${d.verdict}\n`;
+        body += `Security:    SOC 2: ${s.soc2 === true ? 'Yes' : s.soc2 === false ? 'No' : '--'}  |  ISO 27001: ${s.iso27001 === true ? 'Yes' : s.iso27001 === false ? 'No' : '--'}  |  HIPAA: ${s.hipaa === true ? 'Yes' : '--'}\n`;
+        body += `Compliance:  GDPR: ${comp.gdpr_mechanism || '--'}  |  DPA: ${comp.dpa_available === true ? 'Yes' : '--'}  |  Residency: ${comp.data_residency || '--'}\n`;
+        body += `Operations:  Status page: ${o.status_page_found ? 'Yes' : 'No'}  |  Layoffs: ${o.layoffs === true ? 'Flagged' : 'None'}  |  Breach: ${o.recent_breach === true ? 'Flagged' : 'None'}\n`;
+        body += `Commercial:  Pricing: ${c.pricing_model || '--'}  |  Ownership: ${c.ownership_type || '--'}\n`;
+        if (r.summary) body += `Summary: ${r.summary}\n`;
+        if (r.recommended_actions && r.recommended_actions.length > 0) {
+          body += `Actions:\n`;
+          r.recommended_actions.forEach(a => { body += `  → ${a}\n`; });
+        }
+        body += '\n';
+      });
+
+      body += `${'─'.repeat(48)}\n`;
+      body += `Generated by Postscript Vendor Intelligence Tool\n`;
+      body += `Scanned: ${date}`;
+
+      const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailto;
+    }
+  </script>
+
+</body>
+</html>
