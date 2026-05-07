@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   // Step 1: Scrape
-  const scrapeRes = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/scrape`, {
+  const scrapeRes = await fetch(`${process.env.VERCEL_URL ? 'https://' + req.headers.host : 'http://localhost:3000'}/api/scrape`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ domain })
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   const scrapeData = await scrapeRes.json();
 
   // Step 2: Analyze
-  const analyzeRes = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/analyze`, {
+  const analyzeRes = await fetch(`${process.env.VERCEL_URL ? 'https://' + req.headers.host : 'http://localhost:3000'}/api/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
