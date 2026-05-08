@@ -95,7 +95,7 @@ export default async function handler(req, res) {
   // ─── STEP 0: DISCOVERY via Serper.dev ────────────────────────────────────
   // Two queries: standard paths AND explicit trust subdomain search.
   // Fixes vendors like notion.so where site: query returns blog posts.
-
+  const vendorName = domain.replace(/^www\./, '').split('.')[0].toLowerCase();
   let discoveredUrls = [];
 
   try {
@@ -113,7 +113,7 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          q: `site:trust.${domain} OR site:security.${domain} OR site:trust-portal.${domain}`,
+          q: `"${vendorName}" site:trust.${domain} OR site:security.${domain} OR "${vendorName}" DPA "sub-processors" GDPR`,
           num: 5
         }),
         signal: AbortSignal.timeout(8000)
