@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬡</text></svg>" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vendor Intelligence — Postscript G&A</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,9 +12,12 @@
 
     :root {
       --purple: #6D28D9;
+      --purple-light: #EDE9FE;
+      --purple-mid: #DDD6FE;
       --black: #0D0D0D;
       --white: #FFFFFF;
       --bg: #F5F5F4;
+      --surface: #FFFFFF;
       --border: #E5E5E3;
       --border-dark: #D1D1CE;
       --text: #111110;
@@ -34,601 +38,579 @@
 
     html, body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; }
 
-    header {
-      background: var(--black); padding: 0 32px;
-      display: flex; align-items: center; justify-content: space-between;
-      height: 52px; position: sticky; top: 0; z-index: 100;
+    /* PASSWORD OVERLAY */
+    .pw-overlay {
+      position: fixed; inset: 0; background: var(--black);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
     }
+    .pw-overlay.hidden { display: none; }
+    .pw-box {
+      background: #1a1a1a; border: 1px solid #333; border-radius: 10px;
+      padding: 36px 40px; width: 340px; text-align: center;
+    }
+    .pw-logo { background: var(--purple); color: white; font-weight: 600; font-size: 13px; padding: 5px 12px; border-radius: 6px; display: inline-block; margin-bottom: 20px; }
+    .pw-title { color: #fff; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .pw-sub { color: #666; font-size: 12px; margin-bottom: 20px; }
+    .pw-input {
+      width: 100%; background: #111; border: 1.5px solid #333; border-radius: 6px;
+      padding: 10px 14px; color: #fff; font-family: var(--font); font-size: 14px;
+      outline: none; margin-bottom: 12px; text-align: center; letter-spacing: 0.1em;
+    }
+    .pw-input:focus { border-color: var(--purple); }
+    .pw-btn {
+      width: 100%; background: var(--purple); color: #fff; border: none;
+      border-radius: 6px; padding: 11px; font-family: var(--font); font-size: 13px;
+      font-weight: 600; cursor: pointer;
+    }
+    .pw-btn:hover { opacity: 0.88; }
+    .pw-error { color: #f87171; font-size: 12px; margin-top: 10px; min-height: 18px; }
+
+    /* HEADER */
+    header { background: var(--black); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 52px; position: sticky; top: 0; z-index: 100; }
     .logo { display: flex; align-items: center; gap: 10px; }
-    .logo-badge { background: var(--purple); color: white; font-weight: 600; font-size: 13px; padding: 4px 10px; border-radius: 6px; }
+    .logo-badge { background: var(--purple); color: white; font-family: var(--font); font-weight: 600; font-size: 13px; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.01em; }
     .logo-label { color: #888; font-size: 12px; font-weight: 500; }
-    .header-pill { background: #1a1a1a; border: 1px solid #333; color: #888; font-size: 11px; padding: 4px 12px; border-radius: 20px; }
+    .header-pill { background: #1a1a1a; border: 1px solid #333; color: #888; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
 
-    .layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 52px); }
+    /* LAYOUT */
+    .layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 52px); }
 
-    .sidebar {
-      background: var(--white); border-right: 1px solid var(--border);
-      padding: 20px 16px; display: flex; flex-direction: column; gap: 14px;
-    }
-    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); }
-    .sidebar-hint { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
-
-    .domain-textarea {
-      width: 100%; height: 160px; background: var(--bg);
-      border: 1.5px solid var(--border-dark); border-radius: 6px;
-      padding: 10px 12px; font-family: 'Courier New', monospace;
-      font-size: 12px; color: var(--text); line-height: 1.8; resize: vertical; outline: none;
-      transition: border-color 0.15s;
-    }
+    /* SIDEBAR */
+    .sidebar { background: var(--white); border-right: 1px solid var(--border); padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+    .sidebar-section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); }
+    .sidebar-hint { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+    .domain-textarea { width: 100%; height: 180px; background: var(--bg); border: 1.5px solid var(--border-dark); border-radius: 6px; padding: 12px 14px; font-family: 'Courier New', monospace; font-size: 12.5px; color: var(--text); line-height: 1.8; resize: vertical; outline: none; transition: border-color 0.15s; }
     .domain-textarea:focus { border-color: var(--purple); }
     .domain-textarea::placeholder { color: var(--text-muted); }
-
-    .scan-btn {
-      width: 100%; background: var(--purple); color: #fff; border: none;
-      border-radius: 6px; padding: 10px; font-family: var(--font);
-      font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
-    }
+    .scan-btn { width: 100%; background: var(--purple); color: #fff; border: none; border-radius: 6px; padding: 11px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; letter-spacing: 0.01em; }
     .scan-btn:hover { opacity: 0.88; }
     .scan-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-    .queue-status { font-size: 11px; color: var(--text-muted); min-height: 16px; }
+    .queue-status { font-size: 12px; color: var(--text-muted); min-height: 18px; }
     .queue-status b { color: var(--text-dim); font-weight: 600; }
     .divider { height: 1px; background: var(--border); }
-
-    .action-btns { display: none; flex-direction: column; gap: 7px; }
+    .action-btns { display: none; flex-direction: column; gap: 8px; }
     .action-btns.visible { display: flex; }
-    .action-btn {
-      width: 100%; background: transparent; color: var(--text-dim);
-      border: 1.5px solid var(--border-dark); border-radius: 6px;
-      padding: 8px; font-family: var(--font); font-size: 11px; font-weight: 500;
-      cursor: pointer; transition: all 0.15s; text-align: center;
-    }
-    .action-btn:hover { border-color: var(--purple); color: var(--purple); }
-    .action-btn.slack { border-color: #4A154B; color: #4A154B; }
-    .action-btn.slack:hover { background: #4A154B; color: white; }
+    .export-btn { width: 100%; background: transparent; color: var(--text-dim); border: 1.5px solid var(--border-dark); border-radius: 6px; padding: 9px; font-family: var(--font); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+    .export-btn:hover { border-color: var(--purple); color: var(--purple); }
+    .slack-info { font-size: 11px; color: var(--text-muted); padding: 8px 10px; background: var(--bg); border-radius: 6px; line-height: 1.5; }
+    .slack-info span { color: var(--green); font-weight: 600; }
 
-    .content { padding: 20px 24px; overflow-y: auto; }
+    /* MAIN */
+    .content { padding: 24px 28px; overflow-y: auto; }
 
-    .risk-bar {
-      display: none; background: var(--white); border: 1px solid var(--border);
-      border-radius: 8px; padding: 14px 18px; margin-bottom: 18px;
-      align-items: center; gap: 0;
-    }
+    /* RISK SUMMARY BAR */
+    .risk-bar { display: none; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; align-items: center; gap: 0; }
     .risk-bar.visible { display: flex; }
-    .risk-bar-title { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-right: 16px; white-space: nowrap; }
-    .risk-counts { display: flex; gap: 7px; flex: 1; }
-    .risk-count { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 600; }
+    .risk-bar-title { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-right: 20px; white-space: nowrap; }
+    .risk-counts { display: flex; gap: 8px; flex: 1; }
+    .risk-count { display: flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; }
     .risk-count.green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
     .risk-count.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
     .risk-count.red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
-    .risk-count-label { font-size: 10px; font-weight: 500; opacity: 0.75; }
-    .risk-bar-progress { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-left: 16px; display: flex; }
+    .risk-count-label { font-size: 11px; font-weight: 500; opacity: 0.75; }
+    .risk-bar-progress { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-left: 20px; display: flex; }
     .progress-green { background: var(--green); transition: width 0.5s ease; }
     .progress-amber { background: var(--amber); transition: width 0.5s ease; }
     .progress-red { background: var(--red); transition: width 0.5s ease; }
 
+    /* EMPTY STATE */
     .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 320px; color: var(--text-muted); font-size: 13px; text-align: center; gap: 8px; }
-    .empty-icon { font-size: 28px; margin-bottom: 4px; }
+    .empty-icon { font-size: 32px; margin-bottom: 4px; }
 
-    .cards-list { display: flex; flex-direction: column; gap: 14px; }
-
-    /* VENDOR CARD */
+    /* CARDS */
+    .cards-list { display: flex; flex-direction: column; gap: 16px; }
     .vendor-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-    .vendor-card.failed { border-color: var(--red-border); }
-
-    .card-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
-    .card-domain { font-family: var(--display); font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 2px; letter-spacing: -0.01em; }
-    .card-meta { font-size: 10px; color: var(--text-muted); }
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+    .card-domain { font-family: var(--display); font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 3px; letter-spacing: -0.01em; }
+    .card-scanned { font-size: 11px; color: var(--text-muted); }
     .score-block { text-align: right; }
-    .score-number { font-family: var(--display); font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 4px; letter-spacing: -0.02em; }
+    .score-number { font-family: var(--display); font-size: 38px; font-weight: 800; line-height: 1; margin-bottom: 5px; letter-spacing: -0.02em; }
     .score-number.green { color: var(--green); }
     .score-number.amber { color: var(--amber); }
     .score-number.red { color: var(--red); }
-    .verdict-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .verdict-badge { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
     .verdict-badge.green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
     .verdict-badge.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
     .verdict-badge.red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
-
-    /* BANNERS */
-    .expiry-banner { padding: 8px 20px; background: var(--amber-bg); border-bottom: 1px solid var(--amber-border); font-size: 11px; color: var(--amber); display: flex; gap: 8px; align-items: center; }
-    .breach-banner { padding: 8px 20px; background: var(--red-bg); border-bottom: 1px solid var(--red-border); font-size: 11px; color: var(--red); display: flex; gap: 8px; }
-    .failed-banner { padding: 10px 20px; background: var(--red-bg); border-bottom: 1px solid var(--red-border); font-size: 11px; color: var(--red); }
-
-    /* SIGNAL SECTIONS */
-    .signals-wrapper { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
-
-    .signal-section { padding: 13px 18px; }
-    .signal-section:first-child { border-right: 1px solid var(--border); }
-
-    .signal-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-    .signal-section-title { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
-    .source-tag { font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 3px; letter-spacing: 0.03em; }
-    .source-vendor { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
-    .source-third { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
-
-    .signal-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 3px 0; font-size: 11px; border-bottom: 1px solid var(--bg); gap: 8px; }
+    .vuln-bar { padding: 10px 22px; background: var(--red-bg); border-bottom: 1px solid var(--red-border); font-size: 12px; color: var(--red); display: flex; gap: 8px; }
+    .signal-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
+    .signal-box { padding: 14px 18px; border-right: 1px solid var(--border); }
+    .signal-box:last-child { border-right: none; }
+    .signal-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+    .signal-row { display: flex; align-items: center; justify-content: space-between; padding: 3.5px 0; font-size: 11.5px; border-bottom: 1px solid var(--bg); }
     .signal-row:last-child { border-bottom: none; }
-    .signal-key { color: var(--text-dim); flex-shrink: 0; }
-    .signal-val { text-align: right; font-weight: 500; font-size: 11px; }
-    .sv-yes { color: var(--green); }
-    .sv-no { color: var(--red); }
-    .sv-warn { color: var(--amber); }
-    .sv-dim { color: var(--text-muted); font-weight: 400; }
-    .sv-neutral { color: var(--text); }
-    .sv-flag { color: var(--red); }
-
-    .subproc-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-    .subproc-chip { font-size: 10px; background: var(--bg); border: 1px solid var(--border-dark); border-radius: 3px; padding: 1px 6px; color: var(--text-dim); }
-
-    /* MANUAL EDIT */
-    .manual-section { padding: 10px 18px; background: var(--amber-bg); border-top: 1px solid var(--amber-border); }
-    .manual-label { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
-    .manual-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .manual-field label { font-size: 10px; color: var(--text-dim); display: block; margin-bottom: 3px; }
-    .manual-field input, .manual-field select {
-      width: 100%; border: 1px solid var(--border-dark); border-radius: 4px;
-      padding: 5px 8px; font-size: 11px; font-family: var(--font); color: var(--text);
-      background: var(--white); outline: none;
-    }
-    .manual-field input:focus, .manual-field select:focus { border-color: var(--purple); }
-    .manual-save { margin-top: 8px; background: var(--purple); color: white; border: none; border-radius: 4px; padding: 6px 14px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font); }
-    .manual-note { font-size: 10px; color: var(--text-muted); margin-top: 5px; font-style: italic; }
-
-    /* BOTTOM */
+    .signal-key { color: var(--text-dim); }
+    .sv { font-weight: 600; font-size: 11px; }
+    .sv.yes { color: var(--green); }
+    .sv.no { color: var(--red); }
+    .sv.warn { color: var(--amber); }
+    .sv.dim { color: var(--text-muted); font-weight: 400; }
+    .sv.neutral { color: var(--text); font-weight: 500; }
     .card-bottom { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
-    .card-summary { padding: 12px 18px; background: var(--bg); border-right: 1px solid var(--border); }
-    .card-actions { padding: 12px 18px; }
-    .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
-    .summary-text { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
-    .action-item { display: flex; gap: 6px; padding: 3px 0; font-size: 11px; color: var(--text-dim); line-height: 1.5; border-bottom: 1px solid var(--bg); }
+    .card-summary { padding: 14px 18px; background: var(--bg); border-right: 1px solid var(--border); }
+    .card-actions { padding: 14px 18px; }
+    .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 7px; }
+    .summary-text { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+    .action-item { display: flex; gap: 7px; padding: 4px 0; font-size: 11.5px; color: var(--text-dim); line-height: 1.5; border-bottom: 1px solid var(--bg); }
     .action-item:last-child { border-bottom: none; }
     .action-arrow { color: var(--purple); flex-shrink: 0; font-weight: 600; }
 
-    .card-footer { display: flex; justify-content: space-between; align-items: center; padding: 7px 18px; background: var(--bg); font-size: 10px; color: var(--text-muted); gap: 12px; }
-    .status-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    /* MANUAL NOTE SECTION */
+    .note-section { padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--bg); }
+    .note-toggle { font-size: 11px; color: var(--purple); cursor: pointer; font-weight: 500; background: none; border: none; padding: 0; font-family: var(--font); }
+    .note-toggle:hover { opacity: 0.75; }
+    .note-form { margin-top: 10px; display: none; flex-direction: column; gap: 7px; }
+    .note-form.open { display: flex; }
+    .note-input { width: 100%; background: var(--white); border: 1.5px solid var(--border-dark); border-radius: 5px; padding: 8px 10px; font-family: var(--font); font-size: 12px; color: var(--text); resize: vertical; min-height: 60px; outline: none; }
+    .note-input:focus { border-color: var(--purple); }
+    .note-name { width: 100%; background: var(--white); border: 1.5px solid var(--border-dark); border-radius: 5px; padding: 7px 10px; font-family: var(--font); font-size: 12px; color: var(--text); outline: none; }
+    .note-name:focus { border-color: var(--purple); }
+    .note-save-btn { align-self: flex-start; background: var(--purple); color: #fff; border: none; border-radius: 5px; padding: 7px 14px; font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
+    .note-save-btn:hover { opacity: 0.88; }
+    .note-saved { font-size: 11px; color: var(--green); margin-top: 4px; display: none; }
+    .existing-notes { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .existing-note { background: var(--white); border: 1px solid var(--border); border-radius: 5px; padding: 8px 10px; font-size: 11.5px; color: var(--text-dim); line-height: 1.5; }
+    .existing-note-meta { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+
+    /* CARD FOOTER */
+    .card-footer { display: flex; justify-content: space-between; align-items: center; padding: 8px 18px; background: var(--bg); font-size: 11px; color: var(--text-muted); gap: 16px; }
+    .status-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
     .status-dot.success { background: var(--green); }
     .status-dot.partial { background: var(--amber); }
     .status-dot.failed { background: var(--red); }
-    .error-code { font-family: 'Courier New', monospace; font-size: 9px; background: var(--red-bg); color: var(--red); padding: 1px 5px; border-radius: 3px; }
 
-    /* LOADING */
-    .loading-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; display: flex; align-items: center; gap: 12px; color: var(--text-dim); font-size: 13px; }
-    .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+    /* LOADING / ERROR */
+    .loading-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; display: flex; align-items: center; gap: 12px; color: var(--text-dim); font-size: 13px; }
+    .spinner { width: 15px; height: 15px; border: 2px solid var(--border); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .error-card { background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 8px; padding: 14px 18px; font-size: 12px; color: var(--red); }
     .card-anim { animation: fadeUp 0.3s ease; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* PRINT */
+    @media print {
+      .pw-overlay, header, .sidebar, .risk-bar, .empty-state { display: none !important; }
+      .layout { display: block; }
+      .content { padding: 0; }
+      .cards-list { gap: 20px; }
+      .vendor-card { break-inside: avoid; border: 1px solid #ccc; border-radius: 0; box-shadow: none; }
+      .card-footer { display: none; }
+      .note-form, .note-toggle, .note-save-btn { display: none !important; }
+      .loading-card, .error-card { display: none; }
+      body { font-size: 12px; background: white; }
+      .score-number { font-size: 28px; }
+    }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <span class="logo-badge">Postscript</span>
-    <span class="logo-label">Vendor Intelligence</span>
-  </div>
-  <div class="header-pill">G&A Internal Tool</div>
-</header>
-
-<div class="layout">
-
-  <aside class="sidebar">
-    <div class="sidebar-label">Domains to scan</div>
-    <div class="sidebar-hint">One domain per line. Results appear as each vendor is scanned.</div>
-    <textarea class="domain-textarea" id="domainInput"
-      placeholder="notion.so&#10;linear.app&#10;rippling.com&#10;gong.io"
-      spellcheck="false" autocorrect="off"></textarea>
-    <button class="scan-btn" id="scanBtn" onclick="runScan()">Run Scan</button>
-    <div class="queue-status" id="queueStatus"></div>
-    <div class="divider"></div>
-    <div class="action-btns" id="actionBtns">
-      <button class="action-btn" onclick="exportCSV()">↓ Save as CSV</button>
-      <button class="action-btn" onclick="exportPDF()">↓ Save as PDF</button>
-      <button class="action-btn" onclick="sendEmail()">✉ Send via email</button>
-      <button class="action-btn slack" onclick="sendSlack()">⬡ Send to Slack</button>
+  <!-- PASSWORD OVERLAY -->
+  <div class="pw-overlay" id="pwOverlay">
+    <div class="pw-box">
+      <div class="pw-logo">Postscript</div>
+      <div class="pw-title">Vendor Intelligence</div>
+      <div class="pw-sub">G&A Internal Tool — Enter password to continue</div>
+      <input class="pw-input" id="pwInput" type="password" placeholder="Password" autocomplete="off" />
+      <button class="pw-btn" onclick="checkPassword()">Enter</button>
+      <div class="pw-error" id="pwError"></div>
     </div>
-  </aside>
-
-  <div class="content" id="content">
-    <div class="risk-bar" id="riskBar">
-      <div class="risk-bar-title">Scan summary</div>
-      <div class="risk-counts">
-        <div class="risk-count green"><span id="numGreen">0</span><span class="risk-count-label">Low risk</span></div>
-        <div class="risk-count amber"><span id="numAmber">0</span><span class="risk-count-label">Review</span></div>
-        <div class="risk-count red"><span id="numRed">0</span><span class="risk-count-label">Stop</span></div>
-      </div>
-      <div class="risk-bar-progress">
-        <div class="progress-green" id="progGreen" style="width:0%"></div>
-        <div class="progress-amber" id="progAmber" style="width:0%"></div>
-        <div class="progress-red" id="progRed" style="width:0%"></div>
-      </div>
-    </div>
-
-    <div class="empty-state" id="emptyState">
-      <div class="empty-icon">⬡</div>
-      <div>Enter vendor domains on the left and run a scan.</div>
-      <div style="font-size:11px; margin-top:2px;">Security, compliance, ownership, and operating health — all from public sources.</div>
-    </div>
-
-    <div class="cards-list" id="cardsList"></div>
   </div>
 
-</div>
+  <header>
+    <div class="logo">
+      <span class="logo-badge">Postscript</span>
+      <span class="logo-label">Vendor Intelligence</span>
+    </div>
+    <div class="header-pill">G&A Internal Tool</div>
+  </header>
 
-<script>
-  const input = document.getElementById('domainInput');
-  const btn = document.getElementById('scanBtn');
-  const cardsList = document.getElementById('cardsList');
-  const emptyState = document.getElementById('emptyState');
-  const queueStatus = document.getElementById('queueStatus');
-  const riskBar = document.getElementById('riskBar');
-  const actionBtns = document.getElementById('actionBtns');
+  <div class="layout">
 
-  let allResults = [];
+    <aside class="sidebar">
+      <div class="sidebar-section-label">Domains to scan</div>
+      <div class="sidebar-hint">One domain per line. Results appear as each vendor is scanned.</div>
+      <textarea
+        class="domain-textarea"
+        id="domainInput"
+        placeholder="notion.so&#10;linear.app&#10;rippling.com&#10;gong.io"
+        spellcheck="false"
+        autocorrect="off"
+      ></textarea>
+      <button class="scan-btn" id="scanBtn" onclick="runScan()">Run Scan</button>
+      <div class="queue-status" id="queueStatus"></div>
+      <div class="divider"></div>
+      <div class="action-btns" id="actionBtns">
+        <button class="export-btn" onclick="exportCSV()">↓ Save as CSV</button>
+        <button class="export-btn" onclick="printReport()">⎙ Save as PDF</button>
+        <button class="export-btn" onclick="sendEmail()">✉ Send via email</button>
+        <div class="slack-info"><span>✓ Slack</span> — results auto-posted to #postscript_vendor_intelligence after every scan</div>
+      </div>
+    </aside>
 
-  function scoreClass(score) {
-    if (score >= 70) return 'green';
-    if (score >= 40) return 'amber';
-    return 'red';
-  }
+    <div class="content" id="content">
 
-  function sig(val) {
-    if (val === true) return `<span class="signal-val sv-yes">Yes</span>`;
-    if (val === false) return `<span class="signal-val sv-no">No</span>`;
-    return `<span class="signal-val sv-dim">--</span>`;
-  }
+      <div class="risk-bar" id="riskBar">
+        <div class="risk-bar-title">Scan summary</div>
+        <div class="risk-counts">
+          <div class="risk-count green"><span id="numGreen">0</span><span class="risk-count-label">Low risk</span></div>
+          <div class="risk-count amber"><span id="numAmber">0</span><span class="risk-count-label">Review</span></div>
+          <div class="risk-count red"><span id="numRed">0</span><span class="risk-count-label">Stop</span></div>
+        </div>
+        <div class="risk-bar-progress">
+          <div class="progress-green" id="progGreen" style="width:0%"></div>
+          <div class="progress-amber" id="progAmber" style="width:0%"></div>
+          <div class="progress-red" id="progRed" style="width:0%"></div>
+        </div>
+      </div>
 
-  function txt(val) {
-    if (val && val !== 'unknown') return `<span class="signal-val sv-neutral">${val}</span>`;
-    return `<span class="signal-val sv-dim">--</span>`;
-  }
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">⬡</div>
+        <div>Enter vendor domains on the left and run a scan.</div>
+        <div style="font-size:11px; margin-top:2px;">Security, compliance, ownership, and operating health — all from public sources.</div>
+      </div>
 
-  function flag(val) {
-    if (val === true) return `<span class="signal-val sv-flag">Flagged</span>`;
-    return `<span class="signal-val sv-dim">None found</span>`;
-  }
+      <div class="cards-list" id="cardsList"></div>
+    </div>
 
-  function formatDate(iso) {
-    return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  }
+  </div>
 
-  function updateRiskBar() {
-    const completed = allResults.filter(r => r && r.score !== undefined);
-    if (!completed.length) return;
-    const green = completed.filter(r => r.score >= 70).length;
-    const amber = completed.filter(r => r.score >= 40 && r.score < 70).length;
-    const red = completed.filter(r => r.score < 40).length;
-    const total = completed.length;
-    document.getElementById('numGreen').textContent = green;
-    document.getElementById('numAmber').textContent = amber;
-    document.getElementById('numRed').textContent = red;
-    document.getElementById('progGreen').style.width = `${(green/total)*100}%`;
-    document.getElementById('progAmber').style.width = `${(amber/total)*100}%`;
-    document.getElementById('progRed').style.width = `${(red/total)*100}%`;
-    riskBar.classList.add('visible');
-  }
+  <script>
+    // ── PASSWORD ──────────────────────────────────────────────────────────────
+    // Basic access control for internal use. Not production-grade security.
+    // A production version would use Vercel Pro password protection or SSO.
+    const APP_PASSWORD = 'postscript2026'; // Change before sharing live URL
 
-  function buildCard(data) {
-    const r = data.result || {};
-    const cls = scoreClass(data.score);
-    const s = r.security || {};
-    const o = r.operations || {};
-    const c = r.commercial || {};
-    const comp = r.compliance || {};
-    const scrapeStatus = r.scrape_status || 'failed';
-    const isFailed = data.score === 0 && scrapeStatus === 'failed';
-
-    // Expiry banner
-    let expiryBanner = '';
-    if (data.expiryFlag && data.expiryDays !== null) {
-      const msg = data.expiryDays > 0
-        ? `SOC 2 expires in <strong>${data.expiryDays} days</strong>. Request updated certificate before renewal.`
-        : `SOC 2 has expired. Do not renew without updated certification.`;
-      expiryBanner = `<div class="expiry-banner">⚠ ${msg}</div>`;
+    function checkPassword() {
+      const val = document.getElementById('pwInput').value;
+      if (val === APP_PASSWORD) {
+        sessionStorage.setItem('vi_auth', '1');
+        document.getElementById('pwOverlay').classList.add('hidden');
+      } else {
+        document.getElementById('pwError').textContent = 'Incorrect password.';
+        document.getElementById('pwInput').value = '';
+        document.getElementById('pwInput').focus();
+      }
     }
 
-    // Breach banner
-    const breachBanner = o.recent_breach
-      ? `<div class="breach-banner">⛔ <span>Breach reported in external sources — ${o.breach_notes || 'review before renewal'}</span></div>`
-      : '';
+    document.getElementById('pwInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkPassword();
+    });
 
-    // Failed banner
-    const failedBanner = isFailed
-      ? `<div class="failed-banner"><strong>${data.errorCode || 'SCRAPE_FAILED'}</strong> — ${r.scrape_notes || 'No public data available.'}</div>`
-      : '';
+    // Check on load
+    if (sessionStorage.getItem('vi_auth') === '1') {
+      document.getElementById('pwOverlay').classList.add('hidden');
+    }
 
-    // Sub-processors
-    const subProcs = comp.sub_processors || [];
-    const subProcHtml = subProcs.length > 0
-      ? `<div class="signal-row"><span class="signal-key">Sub-processors</span></div>
-         <div class="subproc-list">${subProcs.map(p => `<span class="subproc-chip">${p}</span>`).join('')}</div>`
-      : `<div class="signal-row"><span class="signal-key">Sub-processors</span><span class="signal-val sv-dim">--</span></div>`;
+    // ── HELPERS ───────────────────────────────────────────────────────────────
+    const input      = document.getElementById('domainInput');
+    const btn        = document.getElementById('scanBtn');
+    const cardsList  = document.getElementById('cardsList');
+    const emptyState = document.getElementById('emptyState');
+    const queueStatus= document.getElementById('queueStatus');
+    const riskBar    = document.getElementById('riskBar');
+    const actionBtns = document.getElementById('actionBtns');
 
-    // SOC 2 with expiry
-    const soc2Val = s.soc2 === true
-      ? (data.expiryFlag
-          ? `<span class="signal-val sv-warn">Yes — expiring</span>`
-          : `<span class="signal-val sv-yes">Yes${s.soc2_type ? ' — Type ' + s.soc2_type : ''}</span>`)
-      : s.soc2 === false
-        ? `<span class="signal-val sv-no">No</span>`
-        : `<span class="signal-val sv-dim">--</span>`;
+    let allResults = [];
 
-    // Missing fields for manual edit
-    const missingFields = [];
-    if (s.soc2 === null) missingFields.push({ key: 'soc2', label: 'SOC 2 status', type: 'select', options: ['', 'true', 'false'] });
-    if (s.soc2_expiry_date === null && s.soc2) missingFields.push({ key: 'soc2_expiry', label: 'SOC 2 expiry date', type: 'text', placeholder: 'e.g. Dec 2026' });
-    if (comp.dpa_available === null) missingFields.push({ key: 'dpa', label: 'DPA available', type: 'select', options: ['', 'true', 'false'] });
-    if (subProcs.length === 0) missingFields.push({ key: 'sub_processors', label: 'Sub-processors', type: 'text', placeholder: 'e.g. AWS, Cloudflare' });
-    if (c.ownership_type === 'unknown' || c.ownership_type === null) missingFields.push({ key: 'ownership', label: 'Ownership type', type: 'select', options: ['', 'public', 'vc_backed', 'pe_owned', 'bootstrapped'] });
+    function scoreClass(s) { return s >= 70 ? 'green' : s >= 40 ? 'amber' : 'red'; }
 
-    const manualSection = missingFields.length > 0 ? `
-      <div class="manual-section">
-        <div class="manual-label">Manual input required — ${missingFields.length} field${missingFields.length > 1 ? 's' : ''} missing</div>
-        <div class="manual-fields">
-          ${missingFields.map(f => `
-            <div class="manual-field">
-              <label>${f.label}</label>
-              ${f.type === 'select'
-                ? `<select id="manual-${data.domain}-${f.key}">${f.options.map(o => `<option value="${o}">${o || '-- select --'}</option>`).join('')}</select>`
-                : `<input type="text" id="manual-${data.domain}-${f.key}" placeholder="${f.placeholder || ''}" />`
-              }
+    function sig(val) {
+      if (val === true)  return `<span class="sv yes">Yes</span>`;
+      if (val === false) return `<span class="sv no">No</span>`;
+      return `<span class="sv dim">--</span>`;
+    }
+    function txt(val) {
+      if (val && val !== 'unknown') return `<span class="sv neutral">${val}</span>`;
+      return `<span class="sv dim">--</span>`;
+    }
+    function flag(val) {
+      if (val === true) return `<span class="sv no">Flagged</span>`;
+      return `<span class="sv dim">None found</span>`;
+    }
+    function pricingVal(val) {
+      const map = { public: 'Public', freemium: 'Freemium', contact_sales: 'Contact sales', unknown: '--' };
+      const cls = (val === 'public' || val === 'freemium') ? 'yes' : 'dim';
+      return `<span class="sv ${cls}">${map[val] || '--'}</span>`;
+    }
+    function ownershipVal(val) {
+      const map = { public: 'Public co.', pe_owned: 'PE-owned', vc_backed: 'VC-backed', bootstrapped: 'Bootstrapped', unknown: '--' };
+      const cls = val === 'pe_owned' ? 'warn' : val === 'unknown' ? 'dim' : 'neutral';
+      return `<span class="sv ${cls}">${map[val] || '--'}</span>`;
+    }
+    function formatDate(iso) {
+      return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ── RISK BAR ──────────────────────────────────────────────────────────────
+    function updateRiskBar() {
+      const done = allResults.filter(r => r && r.score !== undefined);
+      if (!done.length) return;
+      const green = done.filter(r => r.score >= 70).length;
+      const amber = done.filter(r => r.score >= 40 && r.score < 70).length;
+      const red   = done.filter(r => r.score < 40).length;
+      const total = done.length;
+      document.getElementById('numGreen').textContent = green;
+      document.getElementById('numAmber').textContent = amber;
+      document.getElementById('numRed').textContent   = red;
+      document.getElementById('progGreen').style.width = `${(green/total)*100}%`;
+      document.getElementById('progAmber').style.width = `${(amber/total)*100}%`;
+      document.getElementById('progRed').style.width   = `${(red/total)*100}%`;
+      riskBar.classList.add('visible');
+    }
+
+    // ── CARD BUILDER ──────────────────────────────────────────────────────────
+    function buildCard(data) {
+      const r   = data.result;
+      const cls = scoreClass(data.score);
+      const s   = r.security   || {};
+      const o   = r.operations || {};
+      const c   = r.commercial || {};
+      const comp= r.compliance || {};
+
+      const actions = (r.recommended_actions || [])
+        .map(a => `<div class="action-item"><span class="action-arrow">→</span><span>${a}</span></div>`)
+        .join('');
+
+      const hasVuln = s.notes && (s.notes.toLowerCase().includes('cve') || s.notes.toLowerCase().includes('breach'));
+      const vulnBar = hasVuln ? `<div class="vuln-bar">⚠ <span>${s.notes}</span></div>` : '';
+
+      const scrapeStatus = r.scrape_status || 'success';
+      const safeDomain   = data.domain.replace(/[^a-zA-Z0-9.-]/g, '_');
+
+      return `
+        <div class="vendor-card card-anim" id="card-${safeDomain}">
+          <div class="card-header">
+            <div>
+              <div class="card-domain">${data.domain}</div>
+              <div class="card-scanned">Scanned ${formatDate(data.scannedAt)}</div>
             </div>
-          `).join('')}
-        </div>
-        <button class="manual-save" onclick="saveManualEdit('${data.domain}')">Save and recalculate</button>
-        <div class="manual-note">Manually entered fields are flagged separately from scraped data in audit history.</div>
-      </div>` : '';
-
-    const actions = (r.recommended_actions || [])
-      .map(a => `<div class="action-item"><span class="action-arrow">→</span><span>${a}</span></div>`)
-      .join('');
-
-    const errorCodeBadge = data.errorCode
-      ? `<span class="error-code">${data.errorCode}</span>`
-      : '';
-
-    return `
-      <div class="vendor-card card-anim ${isFailed ? 'failed' : ''}">
-        <div class="card-header">
-          <div>
-            <div class="card-domain">${data.domain}</div>
-            <div class="card-meta">Scanned ${formatDate(data.scannedAt)}</div>
-          </div>
-          <div class="score-block">
-            <div class="score-number ${cls}">${data.score}</div>
-            <div class="verdict-badge ${cls}">${data.verdict}</div>
-          </div>
-        </div>
-
-        ${failedBanner}
-        ${expiryBanner}
-        ${breachBanner}
-
-        <div class="signals-wrapper">
-          <div class="signal-section">
-            <div class="signal-section-header">
-              <span class="signal-section-title">Vendor-reported</span>
-              <span class="source-tag source-vendor">vendor source</span>
+            <div class="score-block">
+              <div class="score-number ${cls}">${data.score}</div>
+              <div class="verdict-badge ${cls}">${data.verdict}</div>
             </div>
-            <div class="signal-row"><span class="signal-key">SOC 2</span>${soc2Val}</div>
-            <div class="signal-row"><span class="signal-key">Cert expiry</span>${txt(s.soc2_expiry_date)}</div>
-            <div class="signal-row"><span class="signal-key">ISO 27001</span>${sig(s.iso27001)}</div>
-            <div class="signal-row"><span class="signal-key">HIPAA</span>${sig(s.hipaa)}</div>
-            <div class="signal-row"><span class="signal-key">FedRAMP</span>${sig(s.fedramp)}</div>
-            <div class="signal-row"><span class="signal-key">GDPR</span><span class="signal-val sv-neutral" style="max-width:130px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${comp.gdpr_mechanism || ''}">${comp.gdpr_mechanism || '<span class="sv-dim">--</span>'}</span></div>
-            <div class="signal-row"><span class="signal-key">DPA</span>${sig(comp.dpa_available)}</div>
-            <div class="signal-row"><span class="signal-key">Data residency</span>${txt(comp.data_residency)}</div>
-            <div class="signal-row"><span class="signal-key">Privacy updated</span>${txt(comp.privacy_policy_updated)}</div>
-            <div class="signal-row"><span class="signal-key">Status page</span>${sig(o.status_page_found)}</div>
-            <div class="signal-row"><span class="signal-key">Incidents</span>${o.status_incidents ? `<span class="signal-val sv-warn" style="max-width:130px;text-align:right">${o.status_incidents}</span>` : `<span class="signal-val sv-dim">None found</span>`}</div>
-            ${subProcHtml}
           </div>
-          <div class="signal-section">
-            <div class="signal-section-header">
-              <span class="signal-section-title">External signals</span>
-              <span class="source-tag source-third">third-party</span>
+
+          ${vulnBar}
+
+          <div class="signal-grid">
+            <div class="signal-box">
+              <div class="signal-label">Security</div>
+              <div class="signal-row"><span class="signal-key">SOC 2</span>${sig(s.soc2)}</div>
+              <div class="signal-row"><span class="signal-key">Type</span>${txt(s.soc2_type)}</div>
+              <div class="signal-row"><span class="signal-key">ISO 27001</span>${sig(s.iso27001)}</div>
+              <div class="signal-row"><span class="signal-key">HIPAA</span>${sig(s.hipaa)}</div>
+              <div class="signal-row"><span class="signal-key">FedRAMP</span>${sig(s.fedramp)}</div>
             </div>
-            <div class="signal-row"><span class="signal-key">Layoffs</span>${flag(o.layoffs)}</div>
-            <div class="signal-row"><span class="signal-key">Breach</span>${flag(o.recent_breach)}</div>
-            <div class="signal-row"><span class="signal-key">Leadership</span>${flag(o.leadership_changes)}</div>
-            <div style="margin-top:10px">
-              <div class="signal-section-header" style="margin-bottom:8px">
-                <span class="signal-section-title">Commercial</span>
-              </div>
-              <div class="signal-row"><span class="signal-key">Pricing</span>${comp.pricing_model === 'public' || c.pricing_model === 'freemium' ? `<span class="signal-val sv-yes">${c.pricing_model === 'freemium' ? 'Freemium' : 'Public'}</span>` : txt(c.pricing_model)}</div>
-              <div class="signal-row"><span class="signal-key">Ownership</span>${c.ownership_type === 'pe_owned' ? `<span class="signal-val sv-warn">PE-owned</span>` : txt(c.ownership_type)}</div>
-              <div class="signal-row"><span class="signal-key">Latest round</span>${txt(c.latest_round)}</div>
+            <div class="signal-box">
+              <div class="signal-label">Compliance</div>
+              <div class="signal-row"><span class="signal-key">GDPR</span>${txt(comp.gdpr_mechanism)}</div>
+              <div class="signal-row"><span class="signal-key">DPA</span>${sig(comp.dpa_available)}</div>
+              <div class="signal-row"><span class="signal-key">Residency</span>${txt(comp.data_residency)}</div>
+            </div>
+            <div class="signal-box">
+              <div class="signal-label">Operations</div>
+              <div class="signal-row"><span class="signal-key">Status page</span>${sig(o.status_page_found)}</div>
+              <div class="signal-row"><span class="signal-key">Layoffs</span>${flag(o.layoffs)}</div>
+              <div class="signal-row"><span class="signal-key">Leadership</span>${flag(o.leadership_changes)}</div>
+              <div class="signal-row"><span class="signal-key">Breach</span>${flag(o.recent_breach)}</div>
+            </div>
+            <div class="signal-box">
+              <div class="signal-label">Commercial</div>
+              <div class="signal-row"><span class="signal-key">Pricing</span>${pricingVal(c.pricing_model)}</div>
+              <div class="signal-row"><span class="signal-key">Ownership</span>${ownershipVal(c.ownership_type)}</div>
+              <div class="signal-row"><span class="signal-key">Round</span>${txt(c.latest_round)}</div>
               <div class="signal-row"><span class="signal-key">Founded</span>${txt(c.founded_year)}</div>
             </div>
           </div>
-        </div>
 
-        ${manualSection}
-
-        <div class="card-bottom">
-          <div class="card-summary">
-            <div class="section-label">CFO Summary</div>
-            <div class="summary-text">${r.summary || 'No summary available.'}</div>
+          <div class="card-bottom">
+            <div class="card-summary">
+              <div class="section-label">CFO Summary</div>
+              <div class="summary-text">${r.summary || 'No summary available.'}</div>
+            </div>
+            <div class="card-actions">
+              <div class="section-label">Recommended Actions</div>
+              ${actions || '<div class="action-item"><span class="action-arrow">→</span><span>No actions flagged.</span></div>'}
+            </div>
           </div>
-          <div class="card-actions">
-            <div class="section-label">Recommended Actions</div>
-            ${actions || '<div class="action-item"><span class="action-arrow">→</span><span>No actions flagged.</span></div>'}
+
+          <div class="note-section" id="note-section-${safeDomain}">
+            <button class="note-toggle" onclick="toggleNote('${safeDomain}')">+ Add reviewer note</button>
+            <div class="note-form" id="note-form-${safeDomain}">
+              <textarea class="note-input" id="note-text-${safeDomain}" placeholder="Add a note for the team — e.g. Requested SOC 2 cert from vendor on 8 May 2026"></textarea>
+              <input class="note-name" id="note-name-${safeDomain}" type="text" placeholder="Your name (optional)" />
+              <button class="note-save-btn" onclick="saveNote('${data.domain}', '${safeDomain}')">Save note</button>
+              <div class="note-saved" id="note-saved-${safeDomain}">Saved.</div>
+            </div>
+            <div class="existing-notes" id="existing-notes-${safeDomain}"></div>
+          </div>
+
+          <div class="card-footer">
+            <span><span class="status-dot ${scrapeStatus}"></span>Scrape: ${scrapeStatus}</span>
+            <span style="text-align:right; max-width:70%">${r.scrape_notes || ''}</span>
           </div>
         </div>
+      `;
+    }
 
-        <div class="card-footer">
-          <span><span class="status-dot ${scrapeStatus}"></span>Scrape: ${scrapeStatus} ${errorCodeBadge}</span>
-          <span style="text-align:right;max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.scrape_notes || ''}">${r.scrape_notes || ''}</span>
-        </div>
-      </div>
-    `;
-  }
+    // ── MANUAL NOTE ───────────────────────────────────────────────────────────
+    function toggleNote(safeDomain) {
+      const form = document.getElementById(`note-form-${safeDomain}`);
+      form.classList.toggle('open');
+      if (form.classList.contains('open')) document.getElementById(`note-text-${safeDomain}`).focus();
+    }
 
-  function saveManualEdit(domain) {
-    const result = allResults.find(r => r.domain === domain);
-    if (!result) return;
-    // Collect manual field values and flag them
-    console.log(`Manual edit saved for ${domain} — would write to Supabase in production`);
-    alert(`Manual edit saved for ${domain}. Score will recalculate on next scan with these values stored.`);
-  }
+    async function saveNote(domain, safeDomain) {
+      const note   = document.getElementById(`note-text-${safeDomain}`).value.trim();
+      const editor = document.getElementById(`note-name-${safeDomain}`).value.trim() || 'Team member';
+      if (!note) return;
 
-  async function scanDomain(domain, index, total) {
-    queueStatus.innerHTML = `Scanning <b>${index + 1} of ${total}</b>: ${domain}`;
-    const loadingEl = document.createElement('div');
-    loadingEl.className = 'loading-card';
-    loadingEl.id = `loading-${domain}`;
-    loadingEl.innerHTML = `<div class="spinner"></div><span>Scanning ${domain}...</span>`;
-    cardsList.appendChild(loadingEl);
+      try {
+        const res = await fetch('/api/manual-edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain, note, editor })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Save failed');
 
-    try {
-      const res = await fetch('/api/vendor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain })
+        // Show saved confirmation
+        document.getElementById(`note-saved-${safeDomain}`).style.display = 'block';
+        setTimeout(() => { document.getElementById(`note-saved-${safeDomain}`).style.display = 'none'; }, 3000);
+
+        // Render the note inline
+        const container = document.getElementById(`existing-notes-${safeDomain}`);
+        const noteEl = document.createElement('div');
+        noteEl.className = 'existing-note';
+        noteEl.innerHTML = `${note}<div class="existing-note-meta">Added by ${editor} — just now</div>`;
+        container.appendChild(noteEl);
+
+        // Reset form
+        document.getElementById(`note-text-${safeDomain}`).value = '';
+        document.getElementById(`note-form-${safeDomain}`).classList.remove('open');
+      } catch (err) {
+        alert(`Could not save note: ${err.message}`);
+      }
+    }
+
+    // ── SCAN ──────────────────────────────────────────────────────────────────
+    async function scanDomain(domain, idx, total) {
+      queueStatus.innerHTML = `Scanning <b>${idx + 1} of ${total}</b>: ${domain}`;
+
+      const loadingEl = document.createElement('div');
+      loadingEl.className = 'loading-card';
+      loadingEl.id = `loading-${domain}`;
+      loadingEl.innerHTML = `<div class="spinner"></div><span>Scanning ${domain}...</span>`;
+      cardsList.appendChild(loadingEl);
+
+      try {
+        const res  = await fetch('/api/vendor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain }) });
+        const data = await res.json();
+        if (!res.ok || !data.result) throw new Error(data.error || 'Scan failed');
+
+        allResults.push(data);
+        updateRiskBar();
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = buildCard(data);
+        loadingEl.replaceWith(wrapper.firstElementChild);
+      } catch (err) {
+        allResults.push({ domain, error: err.message });
+        loadingEl.outerHTML = `<div class="error-card"><b>${domain}:</b> ${err.message}</div>`;
+      }
+    }
+
+    async function runScan() {
+      const raw = input.value.trim();
+      if (!raw) return;
+
+      const domains = raw.split('\n')
+        .map(d => d.trim().replace(/^https?:\/\//, '').replace(/\/$/, ''))
+        .filter(Boolean);
+      if (!domains.length) return;
+
+      btn.disabled = true;
+      emptyState.style.display = 'none';
+      cardsList.innerHTML = '';
+      riskBar.classList.remove('visible');
+      actionBtns.classList.remove('visible');
+      allResults = [];
+
+      for (let i = 0; i < domains.length; i++) {
+        await scanDomain(domains[i], i, domains.length);
+      }
+
+      queueStatus.innerHTML = `Done — <b>${domains.length} vendor${domains.length !== 1 ? 's' : ''} scanned</b>`;
+      btn.disabled = false;
+      if (allResults.length > 0) actionBtns.classList.add('visible');
+    }
+
+    // ── EXPORT: CSV ───────────────────────────────────────────────────────────
+    function exportCSV() {
+      const rows = [['Domain','Score','Verdict','SOC2','SOC2 Type','ISO27001','HIPAA','FedRAMP','GDPR Mechanism','DPA Available','Data Residency','Status Page','Layoffs','Leadership Changes','Pricing','Ownership','Latest Round','Founded','Summary','Scanned At']];
+
+      allResults.forEach(d => {
+        if (d.error) { rows.push([d.domain, 'ERROR', d.error, ...Array(17).fill('')]); return; }
+        const r = d.result, s = r.security || {}, o = r.operations || {}, c = r.commercial || {}, comp = r.compliance || {};
+        rows.push([d.domain, d.score, d.verdict,
+          s.soc2 === true ? 'Yes' : s.soc2 === false ? 'No' : '--', s.soc2_type || '--',
+          s.iso27001 === true ? 'Yes' : s.iso27001 === false ? 'No' : '--',
+          s.hipaa === true ? 'Yes' : s.hipaa === false ? 'No' : '--',
+          s.fedramp === true ? 'Yes' : s.fedramp === false ? 'No' : '--',
+          comp.gdpr_mechanism || '--', comp.dpa_available === true ? 'Yes' : comp.dpa_available === false ? 'No' : '--',
+          comp.data_residency || '--', o.status_page_found === true ? 'Yes' : 'No',
+          o.layoffs === true ? 'Flagged' : 'None found', o.leadership_changes === true ? 'Flagged' : 'None found',
+          c.pricing_model || '--', c.ownership_type || '--', c.latest_round || '--', c.founded_year || '--',
+          `"${(r.summary || '').replace(/"/g, "'")}"`, d.scannedAt
+        ]);
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Scan failed');
 
-      // Always push result even if score is 0 — card always renders
-      allResults.push(data);
-      updateRiskBar();
-
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = buildCard(data);
-      loadingEl.replaceWith(wrapper.firstElementChild);
-    } catch (err) {
-      // Even on network error, push a minimal result and render a card
-      const failedData = {
-        domain,
-        score: 0,
-        verdict: 'STOP',
-        scannedAt: new Date().toISOString(),
-        errorCode: 'NETWORK_ERROR',
-        expiryFlag: false,
-        expiryDays: null,
-        result: {
-          security: {}, compliance: {}, operations: {}, commercial: {},
-          recommended_actions: ['Check network connection and retry.', 'If problem persists, request vendor documentation directly.'],
-          summary: 'Scan could not complete due to a network error.',
-          scrape_status: 'failed',
-          scrape_notes: err.message
-        }
-      };
-      allResults.push(failedData);
-      updateRiskBar();
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = buildCard(failedData);
-      loadingEl.replaceWith(wrapper.firstElementChild);
-    }
-  }
-
-  async function runScan() {
-    const raw = input.value.trim();
-    if (!raw) return;
-    const domains = raw
-      .split('\n')
-      .map(d => d.trim().replace(/^https?:\/\//, '').replace(/\/$/, ''))
-      .filter(Boolean);
-    if (!domains.length) return;
-
-    btn.disabled = true;
-    emptyState.style.display = 'none';
-    cardsList.innerHTML = '';
-    riskBar.classList.remove('visible');
-    actionBtns.classList.remove('visible');
-    allResults = [];
-
-    for (let i = 0; i < domains.length; i++) {
-      await scanDomain(domains[i], i, domains.length);
+      const csv  = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `vendor-scan-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
-    queueStatus.innerHTML = `Done — <b>${domains.length} vendor${domains.length > 1 ? 's' : ''} scanned</b>`;
-    btn.disabled = false;
-    if (allResults.length > 0) actionBtns.classList.add('visible');
-  }
+    // ── EXPORT: PDF ───────────────────────────────────────────────────────────
+    function printReport() { window.print(); }
 
-  function exportCSV() {
-    const rows = [['Domain','Score','Verdict','SOC2','SOC2 Type','Cert Expiry','ISO27001','HIPAA','FedRAMP','GDPR','DPA','Data Residency','Privacy Updated','Sub-processors','Status Page','Incidents','Layoffs','Breach','Leadership','Pricing','Ownership','Latest Round','Founded','Summary','Error Code','Scanned At']];
-    allResults.forEach(d => {
-      const r = d.result || {};
-      const s = r.security || {};
-      const o = r.operations || {};
-      const c = r.commercial || {};
-      const comp = r.compliance || {};
-      rows.push([
-        d.domain, d.score, d.verdict,
-        s.soc2 === true ? 'Yes' : s.soc2 === false ? 'No' : '--',
-        s.soc2_type || '--',
-        s.soc2_expiry_date || '--',
-        s.iso27001 === true ? 'Yes' : '--',
-        s.hipaa === true ? 'Yes' : '--',
-        s.fedramp === true ? 'Yes' : '--',
-        comp.gdpr_mechanism || '--',
-        comp.dpa_available === true ? 'Yes' : '--',
-        comp.data_residency || '--',
-        comp.privacy_policy_updated || '--',
-        (comp.sub_processors || []).join('; ') || '--',
-        o.status_page_found ? 'Yes' : 'No',
-        o.status_incidents || '--',
-        o.layoffs === true ? 'Flagged' : 'None',
-        o.recent_breach === true ? 'Flagged' : 'None',
-        o.leadership_changes === true ? 'Flagged' : 'None',
-        c.pricing_model || '--',
-        c.ownership_type || '--',
-        c.latest_round || '--',
-        c.founded_year || '--',
-        `"${(r.summary || '').replace(/"/g, "'")}"`,
-        d.errorCode || '--',
-        d.scannedAt
-      ]);
-    });
-    const csv = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `vendor-scan-${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+    // ── EXPORT: EMAIL ─────────────────────────────────────────────────────────
+    function sendEmail() {
+      const date      = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const completed = allResults.filter(r => r.score !== undefined);
+      const subject   = `Vendor Risk Scan — ${completed.length} vendor${completed.length !== 1 ? 's' : ''} — ${date}`;
+      const stop  = completed.filter(r => r.score < 40);
+      const review= completed.filter(r => r.score >= 40 && r.score < 70);
+      const low   = completed.filter(r => r.score >= 70);
 
-  function exportPDF() {
-    window.print();
-  }
+      let body = `VENDOR RISK SCAN — ${date}\nPostscript G&A Vendor Intelligence Tool\n${'─'.repeat(48)}\n\nSUMMARY\n${low.length} Low Risk  |  ${review.length} Review  |  ${stop.length} Stop\n\n`;
 
-  function sendEmail() {
-    const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const completed = allResults.filter(r => r.score !== undefined);
-    const subject = `Vendor Risk Scan — ${completed.length} vendor${completed.length !== 1 ? 's' : ''} — ${date}`;
-    const stop = completed.filter(r => r.score < 40);
-    const review = completed.filter(r => r.score >= 40 && r.score < 70);
-    const low = completed.filter(r => r.score >= 70);
+      if (stop.length)   { body += `STOP — DO NOT PROCEED WITHOUT REVIEW\n`; stop.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
+      if (review.length) { body += `REVIEW REQUIRED\n`; review.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
+      if (low.length)    { body += `LOW RISK\n`; low.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
 
-    let body = `VENDOR RISK SCAN — ${date}\nPostscript G&A Vendor Intelligence\n${'─'.repeat(48)}\n\n`;
-    body += `SUMMARY\n${low.length} Low Risk  |  ${review.length} Review  |  ${stop.length} Stop\n\n`;
-    if (stop.length) { body += `STOP\n`; stop.forEach(d => { body += `  • ${d.domain} — ${d.score}/100\n`; }); body += '\n'; }
-    if (review.length) { body += `REVIEW\n`; review.forEach(d => { body += `  • ${d.domain} — ${d.score}/100\n`; }); body += '\n'; }
-    if (low.length) { body += `LOW RISK\n`; low.forEach(d => { body += `  • ${d.domain} — ${d.score}/100\n`; }); body += '\n'; }
+      body += `${'─'.repeat(48)}\n\nVENDOR DETAILS\n\n`;
+      completed.forEach(d => {
+        const r = d.result, s = r.security || {}, o = r.operations || {}, c = r.commercial || {}, comp = r.compliance || {};
+        body += `${d.domain.toUpperCase()} — ${d.score}/100 — ${d.verdict}\n`;
+        body += `Security:    SOC 2: ${s.soc2 === true ? 'Yes' : '--'}  |  ISO 27001: ${s.iso27001 === true ? 'Yes' : '--'}  |  HIPAA: ${s.hipaa === true ? 'Yes' : '--'}\n`;
+        body += `Compliance:  GDPR: ${comp.gdpr_mechanism || '--'}  |  DPA: ${comp.dpa_available === true ? 'Yes' : '--'}  |  Residency: ${comp.data_residency || '--'}\n`;
+        body += `Operations:  Status page: ${o.status_page_found ? 'Yes' : 'No'}  |  Layoffs: ${o.layoffs === true ? 'Flagged' : 'None'}  |  Breach: ${o.recent_breach === true ? 'Flagged' : 'None'}\n`;
+        body += `Commercial:  Pricing: ${c.pricing_model || '--'}  |  Ownership: ${c.ownership_type || '--'}\n`;
+        if (r.summary) body += `Summary: ${r.summary}\n`;
+        if (r.recommended_actions?.length) { body += `Actions:\n`; r.recommended_actions.forEach(a => { body += `  → ${a}\n`; }); }
+        body += '\n';
+      });
+      body += `${'─'.repeat(48)}\nGenerated by Postscript Vendor Intelligence Tool\nScanned: ${date}`;
 
-    body += `${'─'.repeat(48)}\n\nVENDOR DETAILS\n\n`;
-    completed.forEach(d => {
-      const r = d.result || {};
-      const s = r.security || {};
-      const comp = r.compliance || {};
-      body += `${d.domain.toUpperCase()} — ${d.score}/100 — ${d.verdict}\n`;
-      if (d.expiryFlag) body += `  ⚠ SOC 2 expiring in ${d.expiryDays} days\n`;
-      body += `Security: SOC 2: ${s.soc2 === true ? 'Yes' : '--'}  |  ISO 27001: ${s.iso27001 === true ? 'Yes' : '--'}\n`;
-      body += `Compliance: GDPR: ${comp.gdpr_mechanism || '--'}  |  DPA: ${comp.dpa_available === true ? 'Yes' : '--'}\n`;
-      if (r.summary) body += `Summary: ${r.summary}\n`;
-      body += '\n';
-    });
-    body += `Generated by Postscript Vendor Intelligence\n${date}`;
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  }
-
-  function sendSlack() {
-    alert('Slack integration: scan results are automatically posted to your configured channel after each scan. To set up, add SLACK_WEBHOOK_URL to your environment variables.');
-  }
-</script>
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+  </script>
 
 </body>
 </html>
