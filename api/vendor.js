@@ -8,6 +8,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No domain provided' });
   }
 
+  const startTime = Date.now();
+
   // 24-month cutoff for news — never hardcoded year
   const cutoffDate = new Date();
   cutoffDate.setMonth(cutoffDate.getMonth() - 24);
@@ -15,10 +17,12 @@ export default async function handler(req, res) {
   const cutoffYear2 = cutoffYear + 1;
 
   let errorCode = null;
+  const toolsLog = [];
 
   // ─── FIRECRAWL HELPER ─────────────────────────────────────────────────────
-  // Handles JS-rendered pages, bypasses Cloudflare, returns clean markdown.
-  // Falls back cleanly with null if page is inaccessible.
+  // Handles JS-rendered pages and Cloudflare-protected sites.
+  // Returns clean markdown or null if page inaccessible.
+  // onlyMainContent: false ensures cert details in sidebars are captured.
 
   async function firecrawl(url) {
     try {
@@ -31,7 +35,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           url,
           formats: ['markdown'],
-          onlyMainContent: true,
+          onlyMainContent: false,
           timeout: 20000
         }),
         signal: AbortSignal.timeout(25000)
@@ -43,64 +47,117 @@ export default async function handler(req, res) {
       return text.length > 200 ? text : null;
     } catch (err) {
       console.error(`Firecrawl failed for ${url}:`, err.message);
+      toolsLog.push(`Firecrawl timeout: ${url} — ${err.message}`);
       return null;
     }
   }
 
+  // ─── SUPABASE HELPER ──────────────────────────────────────────────────────
+  // REST API calls — no npm package needed.
+
+  async function supabaseGet(path) {
+    try {
+      const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/${path}`, {
+        headers: {
+          'apikey': process.env.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`
+        },
+        signal: AbortSignal.timeout(5000)
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('Supabase GET failed:', err.message);
+      return null;
+    }
+  }
+
+  async function supabaseInsert(data) {
+    try {
+      const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/vendor_scans`, {
+        method: 'POST',
+        headers: {
+          'apikey': process.env.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(data),
+        signal: AbortSignal.timeout(5000)
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Supabase INSERT failed:', err.message);
+      return false;
+    }
+  }
+
   // ─── STEP 0: DISCOVERY via Serper.dev ────────────────────────────────────
-  // Find real vendor-owned URLs before scraping.
-  // Prevents guessing paths and hitting dead ends.
+  // Two queries: standard paths AND explicit trust subdomain search.
+  // Fixes vendors like notion.so where site: query returns blog posts.
 
   let discoveredUrls = [];
 
   try {
-    const serperRes = await fetch('https://google.serper.dev/search', {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': process.env.SERPER_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        q: `site:${domain} security OR trust OR compliance OR privacy OR DPA`,
-        num: 10
+    const [standardSearch, trustSearch] = await Promise.allSettled([
+      fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          q: `site:${domain} security OR trust OR compliance OR privacy OR DPA`,
+          num: 8
+        }),
+        signal: AbortSignal.timeout(8000)
       }),
-      signal: AbortSignal.timeout(8000)
-    });
+      fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          q: `site:trust.${domain} OR site:security.${domain} OR site:trust-portal.${domain}`,
+          num: 5
+        }),
+        signal: AbortSignal.timeout(8000)
+      })
+    ]);
 
-    if (serperRes.ok) {
-      const serperData = await serperRes.json();
-      const organic = serperData.organic || [];
-      discoveredUrls = organic
+    const allOrganic = [];
+    for (const r of [standardSearch, trustSearch]) {
+      if (r.status === 'fulfilled' && r.value.ok) {
+        const data = await r.value.json();
+        allOrganic.push(...(data.organic || []));
+      }
+    }
+
+    const baseDomain = domain.replace(/^www\./, '');
+    discoveredUrls = [...new Set(
+      allOrganic
         .map(r => r.link)
         .filter(url => {
           try {
             const hostname = new URL(url).hostname;
-            const baseDomain = domain.replace(/^www\./, '');
             return hostname === baseDomain ||
               hostname === `www.${baseDomain}` ||
               hostname.endsWith(`.${baseDomain}`);
           } catch { return false; }
         })
-        .slice(0, 5);
-      console.log(`[Serper] Found ${discoveredUrls.length} vendor URLs for ${domain}`);
-    }
+    )].slice(0, 8);
+
+    toolsLog.push(`Serper: found ${discoveredUrls.length} vendor URLs`);
+    console.log(`[Serper] Found ${discoveredUrls.length} vendor URLs for ${domain}`);
   } catch (err) {
     console.error(`Serper discovery failed for ${domain}:`, err.message);
     errorCode = 'DISCOVERY_FAILED';
+    toolsLog.push(`Serper: FAILED — ${err.message}`);
   }
 
   // ─── STEP 1b: PARALLEL NEWS SEARCH via Serper ────────────────────────────
   // Runs in parallel with scraping. THIRD_PARTY content only.
-  // Used for layoffs, breaches, leadership changes — never security certs.
 
   const newsSearchPromise = (async () => {
     try {
       const newsRes = await fetch('https://google.serper.dev/news', {
         method: 'POST',
-        headers: {
-          'X-API-KEY': process.env.SERPER_API_KEY,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           q: `"${domain}" layoffs OR breach OR "data breach" OR "leadership change" OR acquired OR funding ${cutoffYear} OR ${cutoffYear2}`,
           num: 5
@@ -110,20 +167,19 @@ export default async function handler(req, res) {
       if (!newsRes.ok) return '';
       const newsData = await newsRes.json();
       const articles = newsData.news || [];
+      toolsLog.push(`Serper news: found ${articles.length} articles`);
       if (!articles.length) return '';
       return articles.map(a =>
         `[THIRD_PARTY: ${a.source || 'news'} — ${a.date || 'recent'}]\nTitle: ${a.title}\nSnippet: ${a.snippet}`
       ).join('\n\n');
     } catch (err) {
       console.error(`News search failed for ${domain}:`, err.message);
+      toolsLog.push(`Serper news: FAILED — ${err.message}`);
       return '';
     }
   })();
 
   // ─── STEP 1: SCRAPE via Firecrawl (parallel) ─────────────────────────────
-  // Firecrawl handles JS-rendered pages and Cloudflare-protected sites.
-  // Scrape discovered URLs + standard paths simultaneously.
-  // Kept to 8 paths max to stay within Firecrawl free tier limits.
 
   const standardPaths = [
     '/security', '/trust', '/trust/security',
@@ -132,7 +188,8 @@ export default async function handler(req, res) {
 
   const trustSubdomains = [
     `https://trust.${domain}`,
-    `https://trust-portal.${domain}`
+    `https://trust-portal.${domain}`,
+    `https://security.${domain}`
   ];
 
   const statusUrls = [
@@ -140,9 +197,8 @@ export default async function handler(req, res) {
     `https://${domain}/status`
   ];
 
-  // Build URL list: discovered first, then trust subdomains, then standard paths
   const discoveredRequests = discoveredUrls
-    .filter(url => !statusUrls.some(s => url.includes('status')))
+    .filter(url => !statusUrls.some(s => url.includes('/status')))
     .map(url => ({ url, label: `VENDOR_OWNED: ${url}` }));
 
   const allScrapeTargets = [
@@ -156,8 +212,8 @@ export default async function handler(req, res) {
   let successCount = 0;
   let statusPageFound = false;
   let statusPageUrl = null;
+  const successfulPaths = [];
 
-  // Run all scrapes in parallel
   const scrapeResults = await Promise.allSettled(
     allScrapeTargets.map(async (target) => {
       const text = await firecrawl(target.url);
@@ -166,40 +222,41 @@ export default async function handler(req, res) {
     })
   );
 
-  // Process status page results first
   for (let i = 0; i < statusUrls.length; i++) {
     const r = scrapeResults[i];
     if (r.status === 'fulfilled' && r.value) {
       const t = r.value.text;
-      if (!t.includes('404') && !t.toLowerCase().includes('not found')) {
+      if (!t.toLowerCase().includes('404') && !t.toLowerCase().includes('not found')) {
         combinedText += `\n\n[${r.value.label}]\n${t.slice(0, 3000)}`;
         statusPageFound = true;
         statusPageUrl = r.value.url;
         successCount++;
+        successfulPaths.push(r.value.url);
         break;
       }
     }
   }
 
-  // Process all other results
   for (let i = statusUrls.length; i < scrapeResults.length; i++) {
     const r = scrapeResults[i];
     if (r.status === 'fulfilled' && r.value) {
       combinedText += `\n\n[${r.value.label}]\n${r.value.text.slice(0, 3000)}`;
       successCount++;
+      successfulPaths.push(r.value.url || r.value.label);
     }
   }
 
+  toolsLog.push(`Firecrawl: scraped ${successCount}/${allScrapeTargets.length} paths`);
+
   let scrapeStatus = successCount >= 3 ? 'success' : successCount > 0 ? 'partial' : 'failed';
   let scrapeNotes = `Retrieved content from ${successCount} paths. Status page: ${statusPageFound ? statusPageUrl : 'not found'}.`;
-  if (discoveredUrls.length > 0) {
-    scrapeNotes += ` Serper discovery found ${discoveredUrls.length} vendor URLs.`;
-  }
+  if (discoveredUrls.length > 0) scrapeNotes += ` Serper discovery found ${discoveredUrls.length} vendor URLs.`;
 
-  // ─── FALLBACK: If Firecrawl got nothing, try Jina search index ───────────
+  // ─── FALLBACK: If Firecrawl got nothing, try Jina search ─────────────────
 
   if (successCount === 0 || combinedText.length < 100) {
     errorCode = 'SCRAPE_BLOCKED';
+    toolsLog.push('Firecrawl: blocked — trying Jina search fallback');
     console.log(`Firecrawl returned nothing for ${domain}, trying Jina search fallback...`);
     try {
       const searchQueries = [
@@ -210,10 +267,7 @@ export default async function handler(req, res) {
       const fallbackResults = await Promise.allSettled(
         searchQueries.map(async (query) => {
           const r = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
-            headers: {
-              'Accept': 'text/plain',
-              'Authorization': `Bearer ${process.env.JINA_API_KEY}`
-            },
+            headers: { 'Accept': 'text/plain', 'Authorization': `Bearer ${process.env.JINA_API_KEY}` },
             signal: AbortSignal.timeout(12000)
           });
           if (!r.ok) return null;
@@ -232,24 +286,24 @@ export default async function handler(req, res) {
       if (successCount > 0) {
         scrapeStatus = 'partial';
         scrapeNotes = `Firecrawl blocked. Content from search index — security certifications may be unverified.`;
+        toolsLog.push('Jina fallback: success');
       } else {
         errorCode = 'SCRAPE_FAILED';
         scrapeStatus = 'failed';
         scrapeNotes = `No public data available for ${domain}. Request security documentation directly from vendor.`;
+        toolsLog.push('Jina fallback: also failed');
       }
     } catch (err) {
       errorCode = 'SCRAPE_FAILED';
       scrapeStatus = 'failed';
       scrapeNotes = `No public data available for ${domain}. Request security documentation directly from vendor.`;
+      toolsLog.push(`Jina fallback: FAILED — ${err.message}`);
     }
   }
 
-  // Wait for news search to complete
   const newsText = await newsSearchPromise;
 
   // ─── STEP 2: ANALYZE via Claude ──────────────────────────────────────────
-  // Vendor-owned content trusted for security certs and compliance signals.
-  // Third-party content used only for operating health and commercial signals.
 
   let analyzeResult = null;
   const fullText = [combinedText, newsText].filter(Boolean).join('\n\n');
@@ -335,15 +389,16 @@ ${fullText.slice(0, 14000)}`;
       const rawText = data.content[0].text;
       const clean = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       analyzeResult = JSON.parse(clean);
+      toolsLog.push('Claude: extraction successful');
 
     } catch (err) {
       console.error('Claude API error:', err.message);
       errorCode = errorCode || 'EXTRACTION_FAILED';
+      toolsLog.push(`Claude: FAILED — ${err.message}`);
 
-      // Retry once with simplified prompt
       try {
         const simplePrompt = `Extract vendor risk signals from this text and return JSON only. No markdown.
-{"security":{"soc2":null,"soc2_type":null,"soc2_expiry_date":null,"iso27001":null,"hipaa":null,"fedramp":null,"pci":null,"notes":null},"compliance":{"gdpr_mechanism":null,"data_residency":"unknown","privacy_policy_updated":null,"dpa_available":null,"sub_processors":[]},"operations":{"status_page_found":false,"status_page_url":null,"status_incidents":null,"layoffs":null,"layoffs_notes":null,"recent_breach":null,"breach_notes":null,"leadership_changes":null,"leadership_notes":null},"commercial":{"pricing_model":"unknown","pricing_notes":null,"ownership_type":"unknown","latest_round":null,"founded_year":null},"recommended_actions":["Request vendor security questionnaire directly."],"summary":"Insufficient public data to assess vendor risk. Request documentation directly."}
+{"security":{"soc2":null,"soc2_type":null,"soc2_expiry_date":null,"iso27001":null,"hipaa":null,"fedramp":null,"pci":null,"notes":null},"compliance":{"gdpr_mechanism":null,"data_residency":"unknown","privacy_policy_updated":null,"dpa_available":null,"sub_processors":[]},"operations":{"status_page_found":false,"status_page_url":null,"status_incidents":null,"layoffs":null,"layoffs_notes":null,"recent_breach":null,"breach_notes":null,"leadership_changes":null,"leadership_notes":null},"commercial":{"pricing_model":"unknown","pricing_notes":null,"ownership_type":"unknown","latest_round":null,"founded_year":null},"recommended_actions":["Request vendor security questionnaire directly."],"summary":"Insufficient public data to assess vendor risk."}
 Text: ${fullText.slice(0, 6000)}`;
 
         const retryRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -363,14 +418,16 @@ Text: ${fullText.slice(0, 6000)}`;
 
         const retryData = await retryRes.json();
         if (retryData.error || !retryData.content || !retryData.content[0]) {
-          throw new Error(`Claude retry error: ${JSON.stringify(retryData.error)}`);
+          throw new Error(`Retry error: ${JSON.stringify(retryData.error)}`);
         }
         const retryRaw = retryData.content[0].text;
         const retryClean = retryRaw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         analyzeResult = JSON.parse(retryClean);
         errorCode = null;
+        toolsLog.push('Claude: retry successful');
       } catch (retryErr) {
         console.error('Claude retry failed:', retryErr.message);
+        toolsLog.push(`Claude retry: FAILED — ${retryErr.message}`);
       }
     }
   }
@@ -401,7 +458,6 @@ Text: ${fullText.slice(0, 6000)}`;
     if (o.recent_breach) score -= 15;
     if (o.layoffs) score -= 5;
 
-    // SOC 2 expiry check
     if (s.soc2_expiry_date) {
       try {
         const expiryDate = new Date(s.soc2_expiry_date);
@@ -418,90 +474,213 @@ Text: ${fullText.slice(0, 6000)}`;
   score = Math.max(0, Math.min(100, score));
   const verdict = score >= 70 ? 'LOW RISK' : score >= 40 ? 'REVIEW' : 'STOP';
 
-  // Minimal result for complete failures
   if (!analyzeResult) {
     analyzeResult = {
       security: { soc2: null, soc2_type: null, soc2_expiry_date: null, iso27001: null, hipaa: null, fedramp: null, pci: null, notes: null },
       compliance: { gdpr_mechanism: null, data_residency: 'unknown', privacy_policy_updated: null, dpa_available: null, sub_processors: [] },
       operations: { status_page_found: false, status_page_url: null, status_incidents: null, layoffs: null, recent_breach: null, leadership_changes: null },
       commercial: { pricing_model: 'unknown', pricing_notes: null, ownership_type: 'unknown', latest_round: null, founded_year: null },
-      recommended_actions: [
-        'Request vendor security questionnaire directly.',
-        'Ask vendor to provide SOC 2 report, DPA, and sub-processor list via email.'
-      ],
+      recommended_actions: ['Request vendor security questionnaire directly.', 'Ask vendor to provide SOC 2 report, DPA, and sub-processor list via email.'],
       summary: 'No public data could be retrieved for this vendor. Request documentation directly before onboarding or renewal.'
     };
   }
 
-  // ─── STEP 4: SLACK NOTIFICATION ──────────────────────────────────────────
+  const duration = Date.now() - startTime;
 
-  if (process.env.SLACK_WEBHOOK_URL) {
+  // ─── STEP 4: SUPABASE — GET PREVIOUS SCAN + STORE CURRENT ────────────────
+
+  let renewalDiff = null;
+  let previousScan = null;
+
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
     try {
-      const color = score >= 70 ? '#15803D' : score >= 40 ? '#92400E' : '#B91C1C';
-      const s = analyzeResult.security || {};
-      const comp = analyzeResult.compliance || {};
+      const prevScans = await supabaseGet(
+        `vendor_scans?domain=eq.${encodeURIComponent(domain)}&order=scanned_at.desc&limit=1`
+      );
 
-      const blocks = [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `*${domain}* — ${score}/100 — *${verdict}*`
-          }
-        },
-        {
-          type: 'section',
-          fields: [
-            { type: 'mrkdwn', text: `*SOC 2:* ${s.soc2 === true ? `Yes${s.soc2_type ? ' Type ' + s.soc2_type : ''}` : s.soc2 === false ? 'No' : '--'}` },
-            { type: 'mrkdwn', text: `*ISO 27001:* ${s.iso27001 === true ? 'Yes' : '--'}` },
-            { type: 'mrkdwn', text: `*GDPR:* ${comp.gdpr_mechanism ? 'Yes' : '--'}` },
-            { type: 'mrkdwn', text: `*DPA:* ${comp.dpa_available === true ? 'Yes' : '--'}` }
-          ]
+      if (prevScans && prevScans.length > 0) {
+        previousScan = prevScans[0];
+        const changes = [];
+        const prevScore = previousScan.score;
+        const prevResult = previousScan.result || {};
+
+        if (Math.abs(score - prevScore) >= 10) {
+          changes.push(`Score changed from ${prevScore} to ${score} (${score > prevScore ? '+' : ''}${score - prevScore})`);
         }
-      ];
-
-      if (expiryFlag && expiryDays !== null) {
-        blocks.push({
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: expiryDays > 0
-              ? `:warning: *SOC 2 expiring in ${expiryDays} days* — request updated certificate`
-              : `:rotating_light: *SOC 2 has expired* — do not renew without updated cert`
-          }
-        });
+        const prevSoc2 = prevResult.security?.soc2;
+        const currSoc2 = analyzeResult.security?.soc2;
+        if (prevSoc2 !== currSoc2) {
+          changes.push(`SOC 2 status changed from ${prevSoc2 === null ? 'unknown' : prevSoc2} to ${currSoc2 === null ? 'unknown' : currSoc2}`);
+        }
+        const prevOwnership = prevResult.commercial?.ownership_type;
+        const currOwnership = analyzeResult.commercial?.ownership_type;
+        if (prevOwnership && currOwnership && prevOwnership !== currOwnership) {
+          changes.push(`Ownership changed from ${prevOwnership} to ${currOwnership}`);
+        }
+        if (!prevResult.operations?.recent_breach && analyzeResult.operations?.recent_breach) {
+          changes.push(`Breach detected since last scan`);
+        }
+        if (changes.length > 0) {
+          renewalDiff = {
+            changes,
+            previousScore: prevScore,
+            previousScannedAt: previousScan.scanned_at
+          };
+        }
       }
 
-      const missingFields = [];
-      if (s.soc2 === null) missingFields.push('SOC 2');
-      if (comp.dpa_available === null) missingFields.push('DPA');
-      if ((comp.sub_processors || []).length === 0) missingFields.push('Sub-processors');
-
-      if (missingFields.length > 0) {
-        blocks.push({
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `:pencil: *Needs manual review:* ${missingFields.join(', ')} — <https://vendor-intelligence-tool.vercel.app|Open portal>`
-          }
-        });
-      }
-
-      blocks.push({
-        type: 'context',
-        elements: [{ type: 'mrkdwn', text: `Scrape: ${scrapeStatus} · ${new Date().toUTCString()}` }]
+      await supabaseInsert({
+        domain,
+        score,
+        verdict,
+        error_code: errorCode,
+        scrape_status: scrapeStatus,
+        scrape_notes: scrapeNotes,
+        result: analyzeResult,
+        expiry_flag: expiryFlag,
+        expiry_days: expiryDays
       });
 
-      await fetch(process.env.SLACK_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attachments: [{ color, blocks }] }),
-        signal: AbortSignal.timeout(5000)
-      });
+      toolsLog.push('Supabase: scan stored');
     } catch (err) {
-      console.error('Slack notification failed (non-critical):', err.message);
+      console.error('Supabase error (non-critical):', err.message);
+      toolsLog.push(`Supabase: FAILED — ${err.message}`);
     }
   }
+
+  // ─── STEP 5: SLACK NOTIFICATIONS ──────────────────────────────────────────
+  // User-facing channel: clean summary with score and key signals.
+  // Admin channel: full debug payload with error codes, timing, tools log.
+
+  const slackPromises = [];
+
+  // User-facing Slack
+  if (process.env.SLACK_WEBHOOK_URL) {
+    slackPromises.push((async () => {
+      try {
+        const color = score >= 70 ? '#15803D' : score >= 40 ? '#92400E' : '#B91C1C';
+        const s = analyzeResult.security || {};
+        const comp = analyzeResult.compliance || {};
+
+        const blocks = [
+          {
+            type: 'section',
+            text: { type: 'mrkdwn', text: `*${domain}* — ${score}/100 — *${verdict}*` }
+          },
+          {
+            type: 'section',
+            fields: [
+              { type: 'mrkdwn', text: `*SOC 2:* ${s.soc2 === true ? `Yes${s.soc2_type ? ' Type ' + s.soc2_type : ''}` : s.soc2 === false ? 'No' : '--'}` },
+              { type: 'mrkdwn', text: `*ISO 27001:* ${s.iso27001 === true ? 'Yes' : '--'}` },
+              { type: 'mrkdwn', text: `*GDPR:* ${comp.gdpr_mechanism ? 'Yes' : '--'}` },
+              { type: 'mrkdwn', text: `*DPA:* ${comp.dpa_available === true ? 'Yes' : '--'}` }
+            ]
+          }
+        ];
+
+        if (expiryFlag && expiryDays !== null) {
+          blocks.push({
+            type: 'section',
+            text: { type: 'mrkdwn', text: expiryDays > 0 ? `:warning: *SOC 2 expiring in ${expiryDays} days*` : `:rotating_light: *SOC 2 has expired*` }
+          });
+        }
+
+        if (renewalDiff) {
+          blocks.push({
+            type: 'section',
+            text: { type: 'mrkdwn', text: `:arrows_counterclockwise: *Changes since last scan:*\n${renewalDiff.changes.map(c => `• ${c}`).join('\n')}` }
+          });
+        }
+
+        const missingFields = [];
+        if (s.soc2 === null) missingFields.push('SOC 2');
+        if (comp.dpa_available === null) missingFields.push('DPA');
+        if ((comp.sub_processors || []).length === 0) missingFields.push('Sub-processors');
+
+        if (missingFields.length > 0) {
+          blocks.push({
+            type: 'section',
+            text: { type: 'mrkdwn', text: `:pencil: *Needs manual review:* ${missingFields.join(', ')} — <https://vendor-intelligence-tool.vercel.app|Open portal>` }
+          });
+        }
+
+        blocks.push({
+          type: 'context',
+          elements: [{ type: 'mrkdwn', text: `Scrape: ${scrapeStatus} · ${duration}ms · ${new Date().toUTCString()}` }]
+        });
+
+        await fetch(process.env.SLACK_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ attachments: [{ color, blocks }] }),
+          signal: AbortSignal.timeout(5000)
+        });
+      } catch (err) {
+        console.error('User Slack notification failed:', err.message);
+      }
+    })());
+  }
+
+  // Admin Slack — full debug payload
+  const hasAnyIssue = errorCode || score === 0 || scrapeStatus === 'failed' || toolsLog.some(t => t.includes('FAILED') || t.includes('timeout') || t.includes('blocked'));
+if (process.env.SLACK_ADMIN_WEBHOOK_URL && hasAnyIssue) {
+    slackPromises.push((async () => {
+      try {
+        const isError = !!errorCode;
+        const adminColor = isError ? '#B91C1C' : score < 40 ? '#92400E' : '#888888';
+
+        const adminBlocks = [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `${isError ? ':rotating_light:' : ':white_check_mark:'} *${domain}* — ${score}/100 — ${verdict}${errorCode ? ` — \`${errorCode}\`` : ''}`
+            }
+          },
+          {
+            type: 'section',
+            fields: [
+              { type: 'mrkdwn', text: `*Scrape status:* ${scrapeStatus}` },
+              { type: 'mrkdwn', text: `*Duration:* ${duration}ms` },
+              { type: 'mrkdwn', text: `*Paths found:* ${successCount}` },
+              { type: 'mrkdwn', text: `*Discovered URLs:* ${discoveredUrls.length}` }
+            ]
+          },
+          {
+            type: 'section',
+            text: { type: 'mrkdwn', text: `*Tools log:*\n${toolsLog.map(t => `• ${t}`).join('\n')}` }
+          },
+          {
+            type: 'section',
+            text: { type: 'mrkdwn', text: `*Scrape notes:* ${scrapeNotes}` }
+          }
+        ];
+
+        if (renewalDiff) {
+          adminBlocks.push({
+            type: 'section',
+            text: { type: 'mrkdwn', text: `*Renewal diff:*\n${renewalDiff.changes.map(c => `• ${c}`).join('\n')}\nPrevious scan: ${renewalDiff.previousScannedAt}` }
+          });
+        }
+
+        adminBlocks.push({
+          type: 'context',
+          elements: [{ type: 'mrkdwn', text: `${new Date().toUTCString()} · vendor-intelligence-tool.vercel.app` }]
+        });
+
+        await fetch(process.env.SLACK_ADMIN_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ attachments: [{ color: adminColor, blocks: adminBlocks }] }),
+          signal: AbortSignal.timeout(5000)
+        });
+      } catch (err) {
+        console.error('Admin Slack notification failed:', err.message);
+      }
+    })());
+  }
+
+  await Promise.allSettled(slackPromises);
 
   // ─── RETURN ───────────────────────────────────────────────────────────────
 
@@ -513,6 +692,7 @@ Text: ${fullText.slice(0, 6000)}`;
     errorCode,
     expiryFlag,
     expiryDays,
+    renewalDiff,
     result: {
       ...analyzeResult,
       scrape_status: scrapeStatus,
