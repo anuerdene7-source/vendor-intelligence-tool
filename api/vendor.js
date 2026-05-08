@@ -8,11 +8,131 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No domain provided' });
   }
 
-  // ─── STEP 1: SCRAPE (parallel, 10s timeout per request) ──────────────────
+  // 24-month cutoff for news — never hardcoded year
+  const cutoffDate = new Date();
+  cutoffDate.setMonth(cutoffDate.getMonth() - 24);
+  const cutoffYear = cutoffDate.getFullYear();
+  const cutoffYear2 = cutoffYear + 1;
 
-  const paths = [
-    '/security', '/trust', '/trust/security', '/compliance',
-    '/privacy', '/pricing', '/about', '/legal/security', '/legal/privacy'
+  let errorCode = null;
+
+  // ─── FIRECRAWL HELPER ─────────────────────────────────────────────────────
+  // Handles JS-rendered pages, bypasses Cloudflare, returns clean markdown.
+  // Falls back cleanly with null if page is inaccessible.
+
+  async function firecrawl(url) {
+    try {
+      const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          url,
+          formats: ['markdown'],
+          onlyMainContent: true,
+          timeout: 20000
+        }),
+        signal: AbortSignal.timeout(25000)
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (!data.success || !data.data?.markdown) return null;
+      const text = data.data.markdown;
+      return text.length > 200 ? text : null;
+    } catch (err) {
+      console.error(`Firecrawl failed for ${url}:`, err.message);
+      return null;
+    }
+  }
+
+  // ─── STEP 0: DISCOVERY via Serper.dev ────────────────────────────────────
+  // Find real vendor-owned URLs before scraping.
+  // Prevents guessing paths and hitting dead ends.
+
+  let discoveredUrls = [];
+
+  try {
+    const serperRes = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': process.env.SERPER_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        q: `site:${domain} security OR trust OR compliance OR privacy OR DPA`,
+        num: 10
+      }),
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (serperRes.ok) {
+      const serperData = await serperRes.json();
+      const organic = serperData.organic || [];
+      discoveredUrls = organic
+        .map(r => r.link)
+        .filter(url => {
+          try {
+            const hostname = new URL(url).hostname;
+            const baseDomain = domain.replace(/^www\./, '');
+            return hostname === baseDomain ||
+              hostname === `www.${baseDomain}` ||
+              hostname.endsWith(`.${baseDomain}`);
+          } catch { return false; }
+        })
+        .slice(0, 5);
+      console.log(`[Serper] Found ${discoveredUrls.length} vendor URLs for ${domain}`);
+    }
+  } catch (err) {
+    console.error(`Serper discovery failed for ${domain}:`, err.message);
+    errorCode = 'DISCOVERY_FAILED';
+  }
+
+  // ─── STEP 1b: PARALLEL NEWS SEARCH via Serper ────────────────────────────
+  // Runs in parallel with scraping. THIRD_PARTY content only.
+  // Used for layoffs, breaches, leadership changes — never security certs.
+
+  const newsSearchPromise = (async () => {
+    try {
+      const newsRes = await fetch('https://google.serper.dev/news', {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': process.env.SERPER_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          q: `"${domain}" layoffs OR breach OR "data breach" OR "leadership change" OR acquired OR funding ${cutoffYear} OR ${cutoffYear2}`,
+          num: 5
+        }),
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!newsRes.ok) return '';
+      const newsData = await newsRes.json();
+      const articles = newsData.news || [];
+      if (!articles.length) return '';
+      return articles.map(a =>
+        `[THIRD_PARTY: ${a.source || 'news'} — ${a.date || 'recent'}]\nTitle: ${a.title}\nSnippet: ${a.snippet}`
+      ).join('\n\n');
+    } catch (err) {
+      console.error(`News search failed for ${domain}:`, err.message);
+      return '';
+    }
+  })();
+
+  // ─── STEP 1: SCRAPE via Firecrawl (parallel) ─────────────────────────────
+  // Firecrawl handles JS-rendered pages and Cloudflare-protected sites.
+  // Scrape discovered URLs + standard paths simultaneously.
+  // Kept to 8 paths max to stay within Firecrawl free tier limits.
+
+  const standardPaths = [
+    '/security', '/trust', '/trust/security',
+    '/compliance', '/privacy', '/about'
+  ];
+
+  const trustSubdomains = [
+    `https://trust.${domain}`,
+    `https://trust-portal.${domain}`
   ];
 
   const statusUrls = [
@@ -20,11 +140,16 @@ export default async function handler(req, res) {
     `https://${domain}/status`
   ];
 
-  // Many vendors host trust docs at non-standard subdomains
-  const trustSubdomains = [
-    `https://trust.${domain}`,
-    `https://trust-portal.${domain}`,
-    `https://security.${domain}`
+  // Build URL list: discovered first, then trust subdomains, then standard paths
+  const discoveredRequests = discoveredUrls
+    .filter(url => !statusUrls.some(s => url.includes('status')))
+    .map(url => ({ url, label: `VENDOR_OWNED: ${url}` }));
+
+  const allScrapeTargets = [
+    ...statusUrls.map(url => ({ url, label: `VENDOR_OWNED: ${url}`, isStatus: true })),
+    ...discoveredRequests,
+    ...trustSubdomains.map(url => ({ url, label: `VENDOR_OWNED: ${url}` })),
+    ...standardPaths.map(path => ({ url: `https://${domain}${path}`, label: `VENDOR_OWNED: ${domain}${path}` }))
   ];
 
   let combinedText = '';
@@ -32,31 +157,22 @@ export default async function handler(req, res) {
   let statusPageFound = false;
   let statusPageUrl = null;
 
-  const allRequests = [
-    ...statusUrls.map(url => ({ type: 'status', url, jinaUrl: `https://r.jina.ai/${url}` })),
-    ...trustSubdomains.map(url => ({ type: 'path', path: url, jinaUrl: `https://r.jina.ai/${url}` })),
-    ...paths.map(path => ({ type: 'path', path, jinaUrl: `https://r.jina.ai/https://${domain}${path}` }))
-  ];
-
-  const results = await Promise.allSettled(
-    allRequests.map(async (r) => {
-      const response = await fetch(r.jinaUrl, {
-        headers: { 'Accept': 'text/plain' },
-        signal: AbortSignal.timeout(10000)
-      });
-      if (!response.ok) return null;
-      const text = await response.text();
-      if (!text || text.length < 200) return null;
-      return { ...r, text };
+  // Run all scrapes in parallel
+  const scrapeResults = await Promise.allSettled(
+    allScrapeTargets.map(async (target) => {
+      const text = await firecrawl(target.url);
+      if (!text) return null;
+      return { ...target, text };
     })
   );
 
-  // Process status page results
-  for (const r of results.slice(0, statusUrls.length)) {
+  // Process status page results first
+  for (let i = 0; i < statusUrls.length; i++) {
+    const r = scrapeResults[i];
     if (r.status === 'fulfilled' && r.value) {
       const t = r.value.text;
-      if (!t.includes('404') && !t.includes('Not Found')) {
-        combinedText += `\n\n--- /status ---\n${t.slice(0, 3000)}`;
+      if (!t.includes('404') && !t.toLowerCase().includes('not found')) {
+        combinedText += `\n\n[${r.value.label}]\n${t.slice(0, 3000)}`;
         statusPageFound = true;
         statusPageUrl = r.value.url;
         successCount++;
@@ -65,28 +181,33 @@ export default async function handler(req, res) {
     }
   }
 
-  // Process trust subdomains and path results together
-  for (const r of results.slice(statusUrls.length)) {
+  // Process all other results
+  for (let i = statusUrls.length; i < scrapeResults.length; i++) {
+    const r = scrapeResults[i];
     if (r.status === 'fulfilled' && r.value) {
-      combinedText += `\n\n--- ${r.value.path} ---\n${r.value.text.slice(0, 3000)}`;
+      combinedText += `\n\n[${r.value.label}]\n${r.value.text.slice(0, 3000)}`;
       successCount++;
     }
   }
 
   let scrapeStatus = successCount >= 3 ? 'success' : successCount > 0 ? 'partial' : 'failed';
   let scrapeNotes = `Retrieved content from ${successCount} paths. Status page: ${statusPageFound ? statusPageUrl : 'not found'}.`;
+  if (discoveredUrls.length > 0) {
+    scrapeNotes += ` Serper discovery found ${discoveredUrls.length} vendor URLs.`;
+  }
 
-  // ─── OPTION A: If direct scrape got nothing, try Jina search immediately ──
+  // ─── FALLBACK: If Firecrawl got nothing, try Jina search index ───────────
 
   if (successCount === 0 || combinedText.length < 100) {
-    console.log(`Direct scrape blocked for ${domain}, trying Jina search...`);
+    errorCode = 'SCRAPE_BLOCKED';
+    console.log(`Firecrawl returned nothing for ${domain}, trying Jina search fallback...`);
     try {
       const searchQueries = [
         `${domain} SOC2 security compliance trust certifications`,
-        `${domain} privacy GDPR data processing agreement`
+        `${domain} privacy GDPR data processing agreement sub-processors`
       ];
 
-      const searchResults = await Promise.allSettled(
+      const fallbackResults = await Promise.allSettled(
         searchQueries.map(async (query) => {
           const r = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
             headers: {
@@ -101,38 +222,52 @@ export default async function handler(req, res) {
         })
       );
 
-      for (const r of searchResults) {
+      for (const r of fallbackResults) {
         if (r.status === 'fulfilled' && r.value) {
-          combinedText += `\n\n--- search results ---\n${r.value.slice(0, 4000)}`;
+          combinedText += `\n\n[THIRD_PARTY: search index]\n${r.value.slice(0, 4000)}`;
           successCount++;
         }
       }
 
       if (successCount > 0) {
         scrapeStatus = 'partial';
-        scrapeNotes = `Direct scrape blocked by vendor. Content retrieved via search index for ${domain}.`;
+        scrapeNotes = `Firecrawl blocked. Content from search index — security certifications may be unverified.`;
       } else {
+        errorCode = 'SCRAPE_FAILED';
         scrapeStatus = 'failed';
-        scrapeNotes = `Unable to retrieve public data for ${domain}. Vendor blocks automated scraping. Request security documentation directly from vendor.`;
+        scrapeNotes = `No public data available for ${domain}. Request security documentation directly from vendor.`;
       }
     } catch (err) {
-      console.error(`Search fallback failed for ${domain}:`, err.message);
+      errorCode = 'SCRAPE_FAILED';
       scrapeStatus = 'failed';
-      scrapeNotes = `Unable to retrieve public data for ${domain}. Request security documentation directly from vendor.`;
+      scrapeNotes = `No public data available for ${domain}. Request security documentation directly from vendor.`;
     }
   }
 
-  // ─── STEP 2: ANALYZE (25s timeout) ───────────────────────────────────────
+  // Wait for news search to complete
+  const newsText = await newsSearchPromise;
+
+  // ─── STEP 2: ANALYZE via Claude ──────────────────────────────────────────
+  // Vendor-owned content trusted for security certs and compliance signals.
+  // Third-party content used only for operating health and commercial signals.
 
   let analyzeResult = null;
+  const fullText = [combinedText, newsText].filter(Boolean).join('\n\n');
 
-  if (combinedText.length > 100) {
-    const prompt = `You are a vendor risk analyst. Given the following scraped text from a SaaS vendor's public pages, extract the signals below and return them as a JSON object only. No other text. No markdown. No backticks. Just the raw JSON object.
+  if (fullText.length > 100) {
+    const prompt = `You are a vendor risk analyst. The text below contains content from a SaaS vendor's public pages.
+
+IMPORTANT SOURCE RULES:
+- Sections marked [VENDOR_OWNED] are from the vendor's own domain. Trust these for security certifications, sub-processors, DPA, and compliance signals.
+- Sections marked [THIRD_PARTY] are from news or search results. Use these ONLY for layoffs, breaches, leadership changes, and funding signals. NEVER extract security certifications from THIRD_PARTY content.
+
+Extract the signals below and return a JSON object only. No markdown. No backticks. No other text.
 
 {
   "security": {
     "soc2": true or false or null,
     "soc2_type": "I" or "II" or null,
+    "soc2_expiry_date": "date string or null",
     "iso27001": true or false or null,
     "hipaa": true or false or null,
     "fedramp": true or false or null,
@@ -143,16 +278,19 @@ export default async function handler(req, res) {
     "gdpr_mechanism": "string or null",
     "data_residency": "US" or "EU" or "both" or "unknown",
     "privacy_policy_updated": "date string or null",
-    "dpa_available": true or false or null
+    "dpa_available": true or false or null,
+    "sub_processors": ["string"] or []
   },
   "operations": {
     "status_page_found": true or false,
     "status_page_url": "string or null",
-    "employee_count": "string or null",
-    "leadership_changes": true or false or null,
-    "leadership_notes": "string or null",
+    "status_incidents": "string describing recent incidents or null",
     "layoffs": true or false or null,
-    "layoffs_notes": "string or null"
+    "layoffs_notes": "string or null",
+    "recent_breach": true or false or null,
+    "breach_notes": "string or null",
+    "leadership_changes": true or false or null,
+    "leadership_notes": "string or null"
   },
   "commercial": {
     "pricing_model": "public" or "contact_sales" or "freemium" or "unknown",
@@ -162,17 +300,17 @@ export default async function handler(req, res) {
     "founded_year": number or null
   },
   "recommended_actions": ["string", "string"],
-  "summary": "2-3 sentence plain English verdict for a non-technical CFO",
-  "scrape_status": "${scrapeStatus}",
-  "scrape_notes": "${scrapeNotes}"
+  "summary": "2-3 sentence plain English verdict for a non-technical CFO"
 }
 
-For the operations.layoffs field: only return true if the company themselves announced it via a press release, blog post, or official statement in the scraped text. If only mentioned in third-party news, return null not true.
+For layoffs and breaches: only flag true if reported within the last 24 months based on article dates.
+For sub_processors: extract named companies from DPA or trust page VENDOR_OWNED content only. Return empty array if none found.
+For soc2_expiry_date: extract the certificate expiry or renewal date if mentioned. Return null if not found.
+For status_incidents: summarise any recent incidents from the status page content. Return null if none found.
+If a signal cannot be determined, return null. Never guess.
 
-If a signal cannot be determined from the text, return null for that field. Never guess. Never invent data.
-
-Scraped text:
-${combinedText.slice(0, 12000)}`;
+Content:
+${fullText.slice(0, 14000)}`;
 
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -184,25 +322,64 @@ ${combinedText.slice(0, 12000)}`;
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-5',
-          max_tokens: 1000,
+          max_tokens: 2000,
           messages: [{ role: 'user', content: prompt }]
         }),
-        signal: AbortSignal.timeout(25000)
+        signal: AbortSignal.timeout(30000)
       });
 
       const data = await response.json();
+      if (data.error || !data.content || !data.content[0]) {
+        throw new Error(`Claude error: ${JSON.stringify(data.error || data)}`);
+      }
       const rawText = data.content[0].text;
       const clean = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       analyzeResult = JSON.parse(clean);
 
     } catch (err) {
       console.error('Claude API error:', err.message);
+      errorCode = errorCode || 'EXTRACTION_FAILED';
+
+      // Retry once with simplified prompt
+      try {
+        const simplePrompt = `Extract vendor risk signals from this text and return JSON only. No markdown.
+{"security":{"soc2":null,"soc2_type":null,"soc2_expiry_date":null,"iso27001":null,"hipaa":null,"fedramp":null,"pci":null,"notes":null},"compliance":{"gdpr_mechanism":null,"data_residency":"unknown","privacy_policy_updated":null,"dpa_available":null,"sub_processors":[]},"operations":{"status_page_found":false,"status_page_url":null,"status_incidents":null,"layoffs":null,"layoffs_notes":null,"recent_breach":null,"breach_notes":null,"leadership_changes":null,"leadership_notes":null},"commercial":{"pricing_model":"unknown","pricing_notes":null,"ownership_type":"unknown","latest_round":null,"founded_year":null},"recommended_actions":["Request vendor security questionnaire directly."],"summary":"Insufficient public data to assess vendor risk. Request documentation directly."}
+Text: ${fullText.slice(0, 6000)}`;
+
+        const retryRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-5',
+            max_tokens: 1200,
+            messages: [{ role: 'user', content: simplePrompt }]
+          }),
+          signal: AbortSignal.timeout(20000)
+        });
+
+        const retryData = await retryRes.json();
+        if (retryData.error || !retryData.content || !retryData.content[0]) {
+          throw new Error(`Claude retry error: ${JSON.stringify(retryData.error)}`);
+        }
+        const retryRaw = retryData.content[0].text;
+        const retryClean = retryRaw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        analyzeResult = JSON.parse(retryClean);
+        errorCode = null;
+      } catch (retryErr) {
+        console.error('Claude retry failed:', retryErr.message);
+      }
     }
   }
 
-  // ─── STEP 3: SCORE ────────────────────────────────────────────────────────
+  // ─── STEP 3: SCORE + EXPIRY CHECK ─────────────────────────────────────────
 
   let score = 100;
+  let expiryFlag = false;
+  let expiryDays = null;
 
   if (analyzeResult) {
     const s = analyzeResult.security || {};
@@ -213,114 +390,133 @@ ${combinedText.slice(0, 12000)}`;
     if (!s.soc2) score -= 25;
     else if (s.soc2_type !== 'II') score -= 10;
     if (!s.iso27001) score -= 10;
-
     if (!o.status_page_found) score -= 15;
     if (o.leadership_changes) score -= 10;
-
     if (c.ownership_type === 'pe_owned') score -= 15;
     if (c.ownership_type === 'unknown') score -= 10;
-
     if (!comp.gdpr_mechanism) score -= 10;
     if (!comp.dpa_available) score -= 5;
-
     if (c.pricing_model === 'contact_sales') score -= 5;
     if (c.pricing_model === 'unknown') score -= 5;
+    if (o.recent_breach) score -= 15;
+    if (o.layoffs) score -= 5;
+
+    // SOC 2 expiry check
+    if (s.soc2_expiry_date) {
+      try {
+        const expiryDate = new Date(s.soc2_expiry_date);
+        const today = new Date();
+        expiryDays = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+        if (expiryDays <= 90 && expiryDays > 0) { expiryFlag = true; score -= 10; }
+        else if (expiryDays <= 0) { expiryFlag = true; score -= 20; }
+      } catch (e) {
+        console.error('Could not parse expiry date:', s.soc2_expiry_date);
+      }
+    }
   }
 
   score = Math.max(0, Math.min(100, score));
+  const verdict = score >= 70 ? 'LOW RISK' : score >= 40 ? 'REVIEW' : 'STOP';
 
-  // ─── STEP 4: SECURITY SIGNAL FALLBACK ────────────────────────────────────
-  // If we got a card but security signals are all null, do one more targeted
-  // search specifically for security certifications
+  // Minimal result for complete failures
+  if (!analyzeResult) {
+    analyzeResult = {
+      security: { soc2: null, soc2_type: null, soc2_expiry_date: null, iso27001: null, hipaa: null, fedramp: null, pci: null, notes: null },
+      compliance: { gdpr_mechanism: null, data_residency: 'unknown', privacy_policy_updated: null, dpa_available: null, sub_processors: [] },
+      operations: { status_page_found: false, status_page_url: null, status_incidents: null, layoffs: null, recent_breach: null, leadership_changes: null },
+      commercial: { pricing_model: 'unknown', pricing_notes: null, ownership_type: 'unknown', latest_round: null, founded_year: null },
+      recommended_actions: [
+        'Request vendor security questionnaire directly.',
+        'Ask vendor to provide SOC 2 report, DPA, and sub-processor list via email.'
+      ],
+      summary: 'No public data could be retrieved for this vendor. Request documentation directly before onboarding or renewal.'
+    };
+  }
 
-  const sec = analyzeResult ? analyzeResult.security : null;
-  const securityEmpty = sec &&
-    sec.soc2 === null &&
-    sec.iso27001 === null &&
-    sec.hipaa === null &&
-    sec.fedramp === null;
+  // ─── STEP 4: SLACK NOTIFICATION ──────────────────────────────────────────
 
-  if (securityEmpty && scrapeStatus !== 'failed') {
-    console.log(`Security signals empty for ${domain}, running targeted security search...`);
+  if (process.env.SLACK_WEBHOOK_URL) {
     try {
-      const searchUrl = `https://s.jina.ai/${encodeURIComponent(domain + ' SOC2 Type II certified security trust compliance')}`;
-      const searchRes = await fetch(searchUrl, {
-        headers: {
-          'Accept': 'text/plain',
-          'Authorization': `Bearer ${process.env.JINA_API_KEY}`
+      const color = score >= 70 ? '#15803D' : score >= 40 ? '#92400E' : '#B91C1C';
+      const s = analyzeResult.security || {};
+      const comp = analyzeResult.compliance || {};
+
+      const blocks = [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*${domain}* — ${score}/100 — *${verdict}*`
+          }
         },
-        signal: AbortSignal.timeout(10000)
+        {
+          type: 'section',
+          fields: [
+            { type: 'mrkdwn', text: `*SOC 2:* ${s.soc2 === true ? `Yes${s.soc2_type ? ' Type ' + s.soc2_type : ''}` : s.soc2 === false ? 'No' : '--'}` },
+            { type: 'mrkdwn', text: `*ISO 27001:* ${s.iso27001 === true ? 'Yes' : '--'}` },
+            { type: 'mrkdwn', text: `*GDPR:* ${comp.gdpr_mechanism ? 'Yes' : '--'}` },
+            { type: 'mrkdwn', text: `*DPA:* ${comp.dpa_available === true ? 'Yes' : '--'}` }
+          ]
+        }
+      ];
+
+      if (expiryFlag && expiryDays !== null) {
+        blocks.push({
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: expiryDays > 0
+              ? `:warning: *SOC 2 expiring in ${expiryDays} days* — request updated certificate`
+              : `:rotating_light: *SOC 2 has expired* — do not renew without updated cert`
+          }
+        });
+      }
+
+      const missingFields = [];
+      if (s.soc2 === null) missingFields.push('SOC 2');
+      if (comp.dpa_available === null) missingFields.push('DPA');
+      if ((comp.sub_processors || []).length === 0) missingFields.push('Sub-processors');
+
+      if (missingFields.length > 0) {
+        blocks.push({
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `:pencil: *Needs manual review:* ${missingFields.join(', ')} — <https://vendor-intelligence-tool.vercel.app|Open portal>`
+          }
+        });
+      }
+
+      blocks.push({
+        type: 'context',
+        elements: [{ type: 'mrkdwn', text: `Scrape: ${scrapeStatus} · ${new Date().toUTCString()}` }]
       });
 
-      if (searchRes.ok) {
-        const searchText = await searchRes.text();
-        if (searchText && searchText.length > 200) {
-          const fallbackPrompt = `You are a vendor risk analyst. Extract security signals from this text and return JSON only. No markdown. No backticks.
-{"security":{"soc2":true/false/null,"soc2_type":"I"/"II"/null,"iso27001":true/false/null,"hipaa":true/false/null,"fedramp":true/false/null,"pci":true/false/null,"notes":"string or null"},"compliance":{"gdpr_mechanism":"string or null","data_residency":"US"/"EU"/"both"/"unknown","privacy_policy_updated":"string or null","dpa_available":true/false/null}}
-Never guess. Return null if not found.
-Text: ${searchText.slice(0, 6000)}`;
-
-          const fallbackClaudeRes = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': process.env.ANTHROPIC_API_KEY,
-              'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-              model: 'claude-sonnet-4-5',
-              max_tokens: 500,
-              messages: [{ role: 'user', content: fallbackPrompt }]
-            }),
-            signal: AbortSignal.timeout(15000)
-          });
-
-          const fallbackClaudeData = await fallbackClaudeRes.json();
-          const rawFallback = fallbackClaudeData.content[0].text;
-          const cleanFallback = rawFallback.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-          const fallbackData = JSON.parse(cleanFallback);
-
-          if (fallbackData.security && fallbackData.security.soc2 !== null) {
-            console.log(`Security search found signals for ${domain}`);
-            analyzeResult.security = fallbackData.security;
-            if (!analyzeResult.compliance.gdpr_mechanism && fallbackData.compliance && fallbackData.compliance.gdpr_mechanism) {
-              analyzeResult.compliance = fallbackData.compliance;
-            }
-
-            const s2 = analyzeResult.security;
-            const o2 = analyzeResult.operations || {};
-            const c2 = analyzeResult.commercial || {};
-            const comp2 = analyzeResult.compliance || {};
-            score = 100;
-            if (!s2.soc2) score -= 25;
-            else if (s2.soc2_type !== 'II') score -= 10;
-            if (!s2.iso27001) score -= 10;
-            if (!o2.status_page_found) score -= 15;
-            if (o2.leadership_changes) score -= 10;
-            if (c2.ownership_type === 'pe_owned') score -= 15;
-            if (c2.ownership_type === 'unknown') score -= 10;
-            if (!comp2.gdpr_mechanism) score -= 10;
-            if (!comp2.dpa_available) score -= 5;
-            if (c2.pricing_model === 'contact_sales') score -= 5;
-            if (c2.pricing_model === 'unknown') score -= 5;
-            score = Math.max(0, Math.min(100, score));
-          }
-        }
-      }
+      await fetch(process.env.SLACK_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attachments: [{ color, blocks }] }),
+        signal: AbortSignal.timeout(5000)
+      });
     } catch (err) {
-      console.error(`Security search timed out for ${domain}:`, err.message);
+      console.error('Slack notification failed (non-critical):', err.message);
     }
   }
 
   // ─── RETURN ───────────────────────────────────────────────────────────────
-
-  const verdict = score >= 70 ? 'LOW RISK' : score >= 40 ? 'REVIEW' : 'STOP';
 
   return res.status(200).json({
     domain,
     score,
     verdict,
     scannedAt: new Date().toISOString(),
-    result: analyzeResult
+    errorCode,
+    expiryFlag,
+    expiryDays,
+    result: {
+      ...analyzeResult,
+      scrape_status: scrapeStatus,
+      scrape_notes: scrapeNotes
+    }
   });
 }
