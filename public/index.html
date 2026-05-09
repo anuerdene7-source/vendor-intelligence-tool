@@ -685,7 +685,7 @@
         const r = scan.result || {}, s = r.security || {}, o = r.operations || {}, c = r.commercial || {}, comp = r.compliance || {};
         csvRows.push([scan.domain, scan.score, scan.verdict, s.soc2 === true ? 'Yes' : 'Not found', s.soc2_type || '--', s.iso27001 === true ? 'Yes' : 'Not found', s.hipaa === true ? 'Yes' : 'Not found', s.fedramp === true ? 'Yes' : 'Not found', comp.gdpr_mechanism || 'Not found', comp.dpa_available === true ? 'Yes' : 'Not found', comp.data_residency || 'Not found', comp.privacy_policy_updated || '--', (comp.sub_processors || []).join('; ') || 'Not found', o.status_page_found ? 'Yes' : 'No', o.status_incidents || 'None', o.layoffs === true ? 'Flagged' : 'None', o.recent_breach === true ? 'Flagged' : 'None', c.pricing_model || 'Not found', c.ownership_type || 'Not found', c.latest_round || '--', c.founded_year || '--', formatDateFull(scan.scanned_at)]);
       });
-      const csv = csvRows.map(r => r.map(v => `"${String(v).replace(/"/g, "'"")}"`).join(',')).join('\n');
+      const csv = csvRows.map(r => r.map(v => `"${String(v).replace(/"/g, "''")}"`).join(',')).join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
