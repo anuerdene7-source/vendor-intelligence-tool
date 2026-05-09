@@ -390,6 +390,68 @@ ${fullText.slice(0, 14000)}`;
       const clean = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       analyzeResult = JSON.parse(clean);
       toolsLog.push('Claude: extraction successful');
+      // ─── STEP 2.5: CERT FALLBACK ──────────────────────────────────────────────
+// If scrape succeeded but all security fields are null, Google has already
+// rendered those JS pages. Pull snippets directly and run a second Claude pass.
+const _s = analyzeResult?.security || {};
+const _allNull = _s.soc2 === null && _s.iso27001 === null && _s.hipaa === null && _s.fedramp === null;
+
+if (_allNull && scrapeStatus !== 'failed' && process.env.SERPER_API_KEY) {
+  console.log(`Security signals empty for ${domain}, running cert snippet fallback...`);
+  try {
+    const certRes = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        q: `${vendorName} SOC 2 "ISO 27001" HIPAA FedRAMP security certifications`,
+        num: 8
+      }),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (certRes.ok) {
+      const certData = await certRes.json();
+      const snippets = (certData.organic || [])
+        .map(r => `[SOURCE: ${r.link}]\n${r.title}\n${r.snippet}`)
+        .join('\n\n');
+      if (snippets.length > 100) {
+        const certPrompt = `You are a vendor risk analyst. Based ONLY on these Google search snippets, extract security certification signals. Return JSON only, no markdown, no backticks.
+
+{"security":{"soc2":null,"soc2_type":null,"iso27001":null,"hipaa":null,"fedramp":null,"pci":null,"notes":null}}
+
+Only set true if a snippet explicitly confirms the certification is held by this vendor. Never guess.
+
+Snippets:
+${snippets.slice(0, 6000)}`;
+
+        const certApiRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-5',
+            max_tokens: 400,
+            messages: [{ role: 'user', content: certPrompt }]
+          }),
+          signal: AbortSignal.timeout(20000)
+        });
+        const certApiData = await certApiRes.json();
+        if (certApiData.content?.[0]?.text) {
+          const certClean = certApiData.content[0].text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          const certResult = JSON.parse(certClean);
+          if (certResult.security) {
+            analyzeResult.security = { ...analyzeResult.security, ...certResult.security };
+            toolsLog.push('Claude: cert snippet fallback successful');
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Cert fallback failed:', err.message);
+    toolsLog.push(`Cert fallback: FAILED — ${err.message}`);
+  }
 
     } catch (err) {
       console.error('Claude API error:', err.message);
