@@ -17,7 +17,6 @@
       --black: #0D0D0D;
       --white: #FFFFFF;
       --bg: #F5F5F4;
-      --surface: #FFFFFF;
       --border: #E5E5E3;
       --border-dark: #D1D1CE;
       --text: #111110;
@@ -39,37 +38,22 @@
     html, body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; }
 
     /* PASSWORD OVERLAY */
-    .pw-overlay {
-      position: fixed; inset: 0; background: var(--black);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 9999;
-    }
+    .pw-overlay { position: fixed; inset: 0; background: var(--black); display: flex; align-items: center; justify-content: center; z-index: 9999; }
     .pw-overlay.hidden { display: none; }
-    .pw-box {
-      background: #1a1a1a; border: 1px solid #333; border-radius: 10px;
-      padding: 36px 40px; width: 340px; text-align: center;
-    }
+    .pw-box { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 36px 40px; width: 340px; text-align: center; }
     .pw-logo { background: var(--purple); color: white; font-weight: 600; font-size: 13px; padding: 5px 12px; border-radius: 6px; display: inline-block; margin-bottom: 20px; }
     .pw-title { color: #fff; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
     .pw-sub { color: #666; font-size: 12px; margin-bottom: 20px; }
-    .pw-input {
-      width: 100%; background: #111; border: 1.5px solid #333; border-radius: 6px;
-      padding: 10px 14px; color: #fff; font-family: var(--font); font-size: 14px;
-      outline: none; margin-bottom: 12px; text-align: center; letter-spacing: 0.1em;
-    }
+    .pw-input { width: 100%; background: #111; border: 1.5px solid #333; border-radius: 6px; padding: 10px 14px; color: #fff; font-family: var(--font); font-size: 14px; outline: none; margin-bottom: 12px; text-align: center; letter-spacing: 0.1em; }
     .pw-input:focus { border-color: var(--purple); }
-    .pw-btn {
-      width: 100%; background: var(--purple); color: #fff; border: none;
-      border-radius: 6px; padding: 11px; font-family: var(--font); font-size: 13px;
-      font-weight: 600; cursor: pointer;
-    }
+    .pw-btn { width: 100%; background: var(--purple); color: #fff; border: none; border-radius: 6px; padding: 11px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; }
     .pw-btn:hover { opacity: 0.88; }
     .pw-error { color: #f87171; font-size: 12px; margin-top: 10px; min-height: 18px; }
 
     /* HEADER */
     header { background: var(--black); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 52px; position: sticky; top: 0; z-index: 100; }
     .logo { display: flex; align-items: center; gap: 10px; }
-    .logo-badge { background: var(--purple); color: white; font-family: var(--font); font-weight: 600; font-size: 13px; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.01em; }
+    .logo-badge { background: var(--purple); color: white; font-family: var(--font); font-weight: 600; font-size: 13px; padding: 4px 10px; border-radius: 6px; }
     .logo-label { color: #888; font-size: 12px; font-weight: 500; }
     .header-pill { background: #1a1a1a; border: 1px solid #333; color: #888; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
 
@@ -83,7 +67,7 @@
     .domain-textarea { width: 100%; height: 180px; background: var(--bg); border: 1.5px solid var(--border-dark); border-radius: 6px; padding: 12px 14px; font-family: 'Courier New', monospace; font-size: 12.5px; color: var(--text); line-height: 1.8; resize: vertical; outline: none; transition: border-color 0.15s; }
     .domain-textarea:focus { border-color: var(--purple); }
     .domain-textarea::placeholder { color: var(--text-muted); }
-    .scan-btn { width: 100%; background: var(--purple); color: #fff; border: none; border-radius: 6px; padding: 11px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; letter-spacing: 0.01em; }
+    .scan-btn { width: 100%; background: var(--purple); color: #fff; border: none; border-radius: 6px; padding: 11px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
     .scan-btn:hover { opacity: 0.88; }
     .scan-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .queue-status { font-size: 12px; color: var(--text-muted); min-height: 18px; }
@@ -99,8 +83,8 @@
     /* MAIN */
     .content { padding: 24px 28px; overflow-y: auto; }
 
-    /* RISK SUMMARY BAR */
-    .risk-bar { display: none; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; align-items: center; gap: 0; }
+    /* RISK BAR */
+    .risk-bar { display: none; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; align-items: center; }
     .risk-bar.visible { display: flex; }
     .risk-bar-title { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-right: 20px; white-space: nowrap; }
     .risk-counts { display: flex; gap: 8px; flex: 1; }
@@ -134,18 +118,25 @@
     .verdict-badge.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
     .verdict-badge.red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
     .vuln-bar { padding: 10px 22px; background: var(--red-bg); border-bottom: 1px solid var(--red-border); font-size: 12px; color: var(--red); display: flex; gap: 8px; }
+    .expiry-banner { padding: 10px 22px; background: var(--amber-bg); border-bottom: 1px solid var(--amber-border); font-size: 12px; color: var(--amber); display: flex; gap: 8px; }
+    .renewal-diff { padding: 10px 22px; background: var(--purple-light); border-bottom: 1px solid var(--purple-mid); font-size: 12px; }
+    .renewal-diff-title { font-weight: 600; color: var(--purple); margin-bottom: 4px; }
+    .renewal-diff-item { color: var(--text-dim); padding: 2px 0; font-size: 11.5px; }
     .signal-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
     .signal-box { padding: 14px 18px; border-right: 1px solid var(--border); }
     .signal-box:last-child { border-right: none; }
     .signal-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
-    .signal-row { display: flex; align-items: center; justify-content: space-between; padding: 3.5px 0; font-size: 11.5px; border-bottom: 1px solid var(--bg); }
+    .source-badge { font-size: 9px; font-weight: 400; color: var(--text-muted); letter-spacing: 0; text-transform: none; margin-left: 4px; font-style: italic; }
+    .signal-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 3.5px 0; font-size: 11.5px; border-bottom: 1px solid var(--bg); flex-wrap: wrap; gap: 2px; }
     .signal-row:last-child { border-bottom: none; }
-    .signal-key { color: var(--text-dim); }
+    .signal-key { color: var(--text-dim); flex-shrink: 0; }
+    .detail-note { font-size: 11px; color: var(--text-dim); line-height: 1.5; padding: 2px 0 6px 0; }
+    .detail-note.dim-text { color: var(--text-muted); font-style: italic; }
     .sv { font-weight: 600; font-size: 11px; }
     .sv.yes { color: var(--green); }
     .sv.no { color: var(--red); }
     .sv.warn { color: var(--amber); }
-    .sv.dim { color: var(--text-muted); font-weight: 400; }
+    .sv.dim { color: var(--text-muted); font-weight: 400; font-style: italic; font-size: 10.5px; }
     .sv.neutral { color: var(--text); font-weight: 500; }
     .card-bottom { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
     .card-summary { padding: 14px 18px; background: var(--bg); border-right: 1px solid var(--border); }
@@ -156,7 +147,7 @@
     .action-item:last-child { border-bottom: none; }
     .action-arrow { color: var(--purple); flex-shrink: 0; font-weight: 600; }
 
-    /* MANUAL NOTE SECTION */
+    /* MANUAL NOTE */
     .note-section { padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--bg); }
     .note-toggle { font-size: 11px; color: var(--purple); cursor: pointer; font-weight: 500; background: none; border: none; padding: 0; font-family: var(--font); }
     .note-toggle:hover { opacity: 0.75; }
@@ -193,11 +184,8 @@
       .pw-overlay, header, .sidebar, .risk-bar, .empty-state { display: none !important; }
       .layout { display: block; }
       .content { padding: 0; }
-      .cards-list { gap: 20px; }
-      .vendor-card { break-inside: avoid; border: 1px solid #ccc; border-radius: 0; box-shadow: none; }
-      .card-footer { display: none; }
-      .note-form, .note-toggle, .note-save-btn { display: none !important; }
-      .loading-card, .error-card { display: none; }
+      .vendor-card { break-inside: avoid; border: 1px solid #ccc; }
+      .card-footer, .note-form, .note-toggle, .note-save-btn, .loading-card, .error-card { display: none !important; }
       body { font-size: 12px; background: white; }
       .score-number { font-size: 28px; }
     }
@@ -205,7 +193,6 @@
 </head>
 <body>
 
-  <!-- PASSWORD OVERLAY -->
   <div class="pw-overlay" id="pwOverlay">
     <div class="pw-box">
       <div class="pw-logo">Postscript</div>
@@ -226,17 +213,10 @@
   </header>
 
   <div class="layout">
-
     <aside class="sidebar">
       <div class="sidebar-section-label">Domains to scan</div>
       <div class="sidebar-hint">One domain per line. Results appear as each vendor is scanned.</div>
-      <textarea
-        class="domain-textarea"
-        id="domainInput"
-        placeholder="notion.so&#10;linear.app&#10;rippling.com&#10;gong.io"
-        spellcheck="false"
-        autocorrect="off"
-      ></textarea>
+      <textarea class="domain-textarea" id="domainInput" placeholder="notion.so&#10;linear.app&#10;rippling.com&#10;gong.io" spellcheck="false" autocorrect="off"></textarea>
       <button class="scan-btn" id="scanBtn" onclick="runScan()">Run Scan</button>
       <div class="queue-status" id="queueStatus"></div>
       <div class="divider"></div>
@@ -249,7 +229,6 @@
     </aside>
 
     <div class="content" id="content">
-
       <div class="risk-bar" id="riskBar">
         <div class="risk-bar-title">Scan summary</div>
         <div class="risk-counts">
@@ -263,24 +242,17 @@
           <div class="progress-red" id="progRed" style="width:0%"></div>
         </div>
       </div>
-
       <div class="empty-state" id="emptyState">
         <div class="empty-icon">⬡</div>
         <div>Enter vendor domains on the left and run a scan.</div>
-        <div style="font-size:11px; margin-top:2px;">Security, compliance, ownership, and operating health — all from public sources.</div>
+        <div style="font-size:11px;margin-top:2px;">Security, compliance, ownership, and operating health — all from public sources.</div>
       </div>
-
       <div class="cards-list" id="cardsList"></div>
     </div>
-
   </div>
 
   <script>
-    // ── PASSWORD ──────────────────────────────────────────────────────────────
-    // Basic access control for internal use. Not production-grade security.
-    // A production version would use Vercel Pro password protection or SSO.
-    const APP_PASSWORD = 'postscript2026'; // Change before sharing live URL
-
+    const APP_PASSWORD = 'postscript2026';
     function checkPassword() {
       const val = document.getElementById('pwInput').value;
       if (val === APP_PASSWORD) {
@@ -292,17 +264,9 @@
         document.getElementById('pwInput').focus();
       }
     }
+    document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
+    if (sessionStorage.getItem('vi_auth') === '1') document.getElementById('pwOverlay').classList.add('hidden');
 
-    document.getElementById('pwInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') checkPassword();
-    });
-
-    // Check on load
-    if (sessionStorage.getItem('vi_auth') === '1') {
-      document.getElementById('pwOverlay').classList.add('hidden');
-    }
-
-    // ── HELPERS ───────────────────────────────────────────────────────────────
     const input      = document.getElementById('domainInput');
     const btn        = document.getElementById('scanBtn');
     const cardsList  = document.getElementById('cardsList');
@@ -310,7 +274,6 @@
     const queueStatus= document.getElementById('queueStatus');
     const riskBar    = document.getElementById('riskBar');
     const actionBtns = document.getElementById('actionBtns');
-
     let allResults = [];
 
     function scoreClass(s) { return s >= 70 ? 'green' : s >= 40 ? 'amber' : 'red'; }
@@ -318,31 +281,30 @@
     function sig(val) {
       if (val === true)  return `<span class="sv yes">Yes</span>`;
       if (val === false) return `<span class="sv no">No</span>`;
-      return `<span class="sv dim">--</span>`;
+      return `<span class="sv dim">Not found in public data</span>`;
     }
     function txt(val) {
       if (val && val !== 'unknown') return `<span class="sv neutral">${val}</span>`;
-      return `<span class="sv dim">--</span>`;
+      return `<span class="sv dim">Not found in public data</span>`;
     }
-    function flag(val) {
-      if (val === true) return `<span class="sv no">Flagged</span>`;
-      return `<span class="sv dim">None found</span>`;
+    function flag(val, notes) {
+      if (val === true) return `<span class="sv no">Flagged${notes ? ` — ${notes}` : ''}</span>`;
+      return `<span class="sv dim">None found in public data</span>`;
     }
-    function pricingVal(val) {
-      const map = { public: 'Public', freemium: 'Freemium', contact_sales: 'Contact sales', unknown: '--' };
-      const cls = (val === 'public' || val === 'freemium') ? 'yes' : 'dim';
-      return `<span class="sv ${cls}">${map[val] || '--'}</span>`;
+    function pricingVal(val, notes) {
+      const map = { public: 'Public tiers', freemium: 'Freemium', contact_sales: 'Contact sales only', unknown: 'Not found in public data' };
+      const cls = (val === 'public' || val === 'freemium') ? 'yes' : val === 'contact_sales' ? 'warn' : 'dim';
+      return `<span class="sv ${cls}">${map[val] || 'Not found in public data'}</span>${notes && val !== 'unknown' ? `<div class="detail-note">${notes}</div>` : ''}`;
     }
     function ownershipVal(val) {
-      const map = { public: 'Public co.', pe_owned: 'PE-owned', vc_backed: 'VC-backed', bootstrapped: 'Bootstrapped', unknown: '--' };
+      const map = { public: 'Public company', pe_owned: 'PE-owned', vc_backed: 'VC-backed', bootstrapped: 'Bootstrapped', unknown: 'Not found in public data' };
       const cls = val === 'pe_owned' ? 'warn' : val === 'unknown' ? 'dim' : 'neutral';
-      return `<span class="sv ${cls}">${map[val] || '--'}</span>`;
+      return `<span class="sv ${cls}">${map[val] || 'Not found in public data'}</span>`;
     }
     function formatDate(iso) {
       return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
-    // ── RISK BAR ──────────────────────────────────────────────────────────────
     function updateRiskBar() {
       const done = allResults.filter(r => r && r.score !== undefined);
       if (!done.length) return;
@@ -359,7 +321,6 @@
       riskBar.classList.add('visible');
     }
 
-    // ── CARD BUILDER ──────────────────────────────────────────────────────────
     function buildCard(data) {
       const r   = data.result;
       const cls = scoreClass(data.score);
@@ -374,9 +335,29 @@
 
       const hasVuln = s.notes && (s.notes.toLowerCase().includes('cve') || s.notes.toLowerCase().includes('breach'));
       const vulnBar = hasVuln ? `<div class="vuln-bar">⚠ <span>${s.notes}</span></div>` : '';
-
       const scrapeStatus = r.scrape_status || 'success';
       const safeDomain   = data.domain.replace(/[^a-zA-Z0-9.-]/g, '_');
+
+      const subProcs = comp.sub_processors || [];
+      const subProcsHtml = subProcs.length > 0
+        ? `<div class="detail-note">${subProcs.join(', ')}</div>`
+        : `<div class="detail-note dim-text">Not found in public data</div>`;
+
+      const incidentsHtml = o.status_incidents
+        ? `<div class="detail-note">${o.status_incidents}</div>`
+        : `<div class="detail-note dim-text">No incidents found in public data</div>`;
+
+      const renewalHtml = data.renewalDiff ? `
+        <div class="renewal-diff">
+          <div class="renewal-diff-title">↻ Changes since last scan (${new Date(data.renewalDiff.previousScannedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})</div>
+          ${data.renewalDiff.changes.map(ch => `<div class="renewal-diff-item">• ${ch}</div>`).join('')}
+        </div>` : '';
+
+      const expiryHtml = data.expiryFlag && data.expiryDays !== null ? `
+        <div class="expiry-banner">⚠ ${data.expiryDays > 0
+          ? `SOC 2 expiring in <strong>${data.expiryDays} days</strong>`
+          : `SOC 2 certificate has <strong>expired</strong>`} — request updated certificate before signing.
+        </div>` : '';
 
       return `
         <div class="vendor-card card-anim" id="card-${safeDomain}">
@@ -391,36 +372,45 @@
             </div>
           </div>
 
-          ${vulnBar}
+          ${expiryHtml}${vulnBar}${renewalHtml}
 
           <div class="signal-grid">
             <div class="signal-box">
-              <div class="signal-label">Security</div>
+              <div class="signal-label">Security <span class="source-badge">vendor trust page</span></div>
               <div class="signal-row"><span class="signal-key">SOC 2</span>${sig(s.soc2)}</div>
-              <div class="signal-row"><span class="signal-key">Type</span>${txt(s.soc2_type)}</div>
+              <div class="signal-row"><span class="signal-key">Type</span>${s.soc2_type ? `<span class="sv neutral">Type ${s.soc2_type}</span>` : `<span class="sv dim">Not found in public data</span>`}</div>
+              <div class="signal-row"><span class="signal-key">Cert expiry</span>${s.soc2_expiry_date ? `<span class="sv neutral">${s.soc2_expiry_date}</span>` : `<span class="sv dim">Not published</span>`}</div>
               <div class="signal-row"><span class="signal-key">ISO 27001</span>${sig(s.iso27001)}</div>
               <div class="signal-row"><span class="signal-key">HIPAA</span>${sig(s.hipaa)}</div>
               <div class="signal-row"><span class="signal-key">FedRAMP</span>${sig(s.fedramp)}</div>
+              <div class="signal-row"><span class="signal-key">PCI</span>${sig(s.pci)}</div>
             </div>
             <div class="signal-box">
-              <div class="signal-label">Compliance</div>
-              <div class="signal-row"><span class="signal-key">GDPR</span>${txt(comp.gdpr_mechanism)}</div>
-              <div class="signal-row"><span class="signal-key">DPA</span>${sig(comp.dpa_available)}</div>
-              <div class="signal-row"><span class="signal-key">Residency</span>${txt(comp.data_residency)}</div>
+              <div class="signal-label">Compliance <span class="source-badge">DPA / privacy page</span></div>
+              <div class="signal-row"><span class="signal-key">GDPR mechanism</span></div>
+              <div class="detail-note ${comp.gdpr_mechanism ? '' : 'dim-text'}">${comp.gdpr_mechanism || 'Not found in public data'}</div>
+              <div class="signal-row" style="margin-top:4px"><span class="signal-key">DPA available</span>${sig(comp.dpa_available)}</div>
+              <div class="signal-row"><span class="signal-key">Data residency</span>${comp.data_residency && comp.data_residency !== 'unknown' ? `<span class="sv neutral">${comp.data_residency}</span>` : `<span class="sv dim">Not found in public data</span>`}</div>
+              <div class="signal-row"><span class="signal-key">Privacy updated</span>${comp.privacy_policy_updated ? `<span class="sv neutral">${comp.privacy_policy_updated}</span>` : `<span class="sv dim">Date not published</span>`}</div>
+              <div class="signal-row"><span class="signal-key">Sub-processors</span></div>
+              ${subProcsHtml}
             </div>
             <div class="signal-box">
-              <div class="signal-label">Operations</div>
-              <div class="signal-row"><span class="signal-key">Status page</span>${sig(o.status_page_found)}</div>
-              <div class="signal-row"><span class="signal-key">Layoffs</span>${flag(o.layoffs)}</div>
-              <div class="signal-row"><span class="signal-key">Leadership</span>${flag(o.leadership_changes)}</div>
-              <div class="signal-row"><span class="signal-key">Breach</span>${flag(o.recent_breach)}</div>
+              <div class="signal-label">Operations <span class="source-badge">status page / news</span></div>
+              <div class="signal-row"><span class="signal-key">Status page</span>${sig(o.status_page_found)}${o.status_page_url ? ` <a href="${o.status_page_url}" target="_blank" style="font-size:10px;color:var(--purple);margin-left:4px">↗</a>` : ''}</div>
+              <div class="signal-row"><span class="signal-key">Recent incidents</span></div>
+              ${incidentsHtml}
+              <div class="signal-row" style="margin-top:4px"><span class="signal-key">Layoffs</span>${flag(o.layoffs, o.layoffs_notes)}</div>
+              <div class="signal-row"><span class="signal-key">Leadership</span>${flag(o.leadership_changes, o.leadership_notes)}</div>
+              <div class="signal-row"><span class="signal-key">Breach</span>${flag(o.recent_breach, o.breach_notes)}</div>
             </div>
             <div class="signal-box">
-              <div class="signal-label">Commercial</div>
-              <div class="signal-row"><span class="signal-key">Pricing</span>${pricingVal(c.pricing_model)}</div>
-              <div class="signal-row"><span class="signal-key">Ownership</span>${ownershipVal(c.ownership_type)}</div>
-              <div class="signal-row"><span class="signal-key">Round</span>${txt(c.latest_round)}</div>
-              <div class="signal-row"><span class="signal-key">Founded</span>${txt(c.founded_year)}</div>
+              <div class="signal-label">Commercial <span class="source-badge">pricing / about page</span></div>
+              <div class="signal-row"><span class="signal-key">Pricing model</span></div>
+              ${pricingVal(c.pricing_model, c.pricing_notes)}
+              <div class="signal-row" style="margin-top:4px"><span class="signal-key">Ownership</span>${ownershipVal(c.ownership_type)}</div>
+              <div class="signal-row"><span class="signal-key">Latest round</span>${c.latest_round ? `<span class="sv neutral">${c.latest_round}</span>` : `<span class="sv dim">Not found in public data</span>`}</div>
+              <div class="signal-row"><span class="signal-key">Founded</span>${c.founded_year ? `<span class="sv neutral">${c.founded_year}</span>` : `<span class="sv dim">Not found in public data</span>`}</div>
             </div>
           </div>
 
@@ -448,13 +438,12 @@
 
           <div class="card-footer">
             <span><span class="status-dot ${scrapeStatus}"></span>Scrape: ${scrapeStatus}</span>
-            <span style="text-align:right; max-width:70%">${r.scrape_notes || ''}</span>
+            <span style="text-align:right;max-width:70%">${r.scrape_notes || ''}</span>
           </div>
         </div>
       `;
     }
 
-    // ── MANUAL NOTE ───────────────────────────────────────────────────────────
     function toggleNote(safeDomain) {
       const form = document.getElementById(`note-form-${safeDomain}`);
       form.classList.toggle('open');
@@ -465,7 +454,6 @@
       const note   = document.getElementById(`note-text-${safeDomain}`).value.trim();
       const editor = document.getElementById(`note-name-${safeDomain}`).value.trim() || 'Team member';
       if (!note) return;
-
       try {
         const res = await fetch('/api/manual-edit', {
           method: 'POST',
@@ -474,19 +462,13 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Save failed');
-
-        // Show saved confirmation
         document.getElementById(`note-saved-${safeDomain}`).style.display = 'block';
         setTimeout(() => { document.getElementById(`note-saved-${safeDomain}`).style.display = 'none'; }, 3000);
-
-        // Render the note inline
         const container = document.getElementById(`existing-notes-${safeDomain}`);
         const noteEl = document.createElement('div');
         noteEl.className = 'existing-note';
         noteEl.innerHTML = `${note}<div class="existing-note-meta">Added by ${editor} — just now</div>`;
         container.appendChild(noteEl);
-
-        // Reset form
         document.getElementById(`note-text-${safeDomain}`).value = '';
         document.getElementById(`note-form-${safeDomain}`).classList.remove('open');
       } catch (err) {
@@ -494,24 +476,18 @@
       }
     }
 
-    // ── SCAN ──────────────────────────────────────────────────────────────────
     async function scanDomain(domain, idx, total) {
       queueStatus.innerHTML = `Scanning <b>${idx + 1} of ${total}</b>: ${domain}`;
-
       const loadingEl = document.createElement('div');
       loadingEl.className = 'loading-card';
-      loadingEl.id = `loading-${domain}`;
       loadingEl.innerHTML = `<div class="spinner"></div><span>Scanning ${domain}...</span>`;
       cardsList.appendChild(loadingEl);
-
       try {
         const res  = await fetch('/api/vendor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain }) });
         const data = await res.json();
         if (!res.ok || !data.result) throw new Error(data.error || 'Scan failed');
-
         allResults.push(data);
         updateRiskBar();
-
         const wrapper = document.createElement('div');
         wrapper.innerHTML = buildCard(data);
         loadingEl.replaceWith(wrapper.firstElementChild);
@@ -524,93 +500,77 @@
     async function runScan() {
       const raw = input.value.trim();
       if (!raw) return;
-
-      const domains = raw.split('\n')
-        .map(d => d.trim().replace(/^https?:\/\//, '').replace(/\/$/, ''))
-        .filter(Boolean);
+      const domains = raw.split('\n').map(d => d.trim().replace(/^https?:\/\//, '').replace(/\/$/, '')).filter(Boolean);
       if (!domains.length) return;
-
       btn.disabled = true;
       emptyState.style.display = 'none';
       cardsList.innerHTML = '';
       riskBar.classList.remove('visible');
       actionBtns.classList.remove('visible');
       allResults = [];
-
-      for (let i = 0; i < domains.length; i++) {
-        await scanDomain(domains[i], i, domains.length);
-      }
-
+      for (let i = 0; i < domains.length; i++) await scanDomain(domains[i], i, domains.length);
       queueStatus.innerHTML = `Done — <b>${domains.length} vendor${domains.length !== 1 ? 's' : ''} scanned</b>`;
       btn.disabled = false;
       if (allResults.length > 0) actionBtns.classList.add('visible');
     }
 
-    // ── EXPORT: CSV ───────────────────────────────────────────────────────────
     function exportCSV() {
-      const rows = [['Domain','Score','Verdict','SOC2','SOC2 Type','ISO27001','HIPAA','FedRAMP','GDPR Mechanism','DPA Available','Data Residency','Status Page','Layoffs','Leadership Changes','Pricing','Ownership','Latest Round','Founded','Summary','Scanned At']];
-
+      const rows = [['Domain','Score','Verdict','SOC2','SOC2 Type','ISO27001','HIPAA','FedRAMP','GDPR Mechanism','DPA','Data Residency','Privacy Updated','Sub-processors','Status Page','Incidents','Layoffs','Leadership','Breach','Pricing','Ownership','Latest Round','Founded','Summary','Scanned At']];
       allResults.forEach(d => {
-        if (d.error) { rows.push([d.domain, 'ERROR', d.error, ...Array(17).fill('')]); return; }
-        const r = d.result, s = r.security || {}, o = r.operations || {}, c = r.commercial || {}, comp = r.compliance || {};
+        if (d.error) { rows.push([d.domain,'ERROR',d.error,...Array(21).fill('')]); return; }
+        const r = d.result, s = r.security||{}, o = r.operations||{}, c = r.commercial||{}, comp = r.compliance||{};
         rows.push([d.domain, d.score, d.verdict,
-          s.soc2 === true ? 'Yes' : s.soc2 === false ? 'No' : '--', s.soc2_type || '--',
-          s.iso27001 === true ? 'Yes' : s.iso27001 === false ? 'No' : '--',
-          s.hipaa === true ? 'Yes' : s.hipaa === false ? 'No' : '--',
-          s.fedramp === true ? 'Yes' : s.fedramp === false ? 'No' : '--',
-          comp.gdpr_mechanism || '--', comp.dpa_available === true ? 'Yes' : comp.dpa_available === false ? 'No' : '--',
-          comp.data_residency || '--', o.status_page_found === true ? 'Yes' : 'No',
-          o.layoffs === true ? 'Flagged' : 'None found', o.leadership_changes === true ? 'Flagged' : 'None found',
-          c.pricing_model || '--', c.ownership_type || '--', c.latest_round || '--', c.founded_year || '--',
-          `"${(r.summary || '').replace(/"/g, "'")}"`, d.scannedAt
+          s.soc2===true?'Yes':s.soc2===false?'No':'Not found', s.soc2_type||'Not found',
+          s.iso27001===true?'Yes':s.iso27001===false?'No':'Not found',
+          s.hipaa===true?'Yes':s.hipaa===false?'No':'Not found',
+          s.fedramp===true?'Yes':s.fedramp===false?'No':'Not found',
+          comp.gdpr_mechanism||'Not found', comp.dpa_available===true?'Yes':comp.dpa_available===false?'No':'Not found',
+          comp.data_residency||'Not found', comp.privacy_policy_updated||'Not published',
+          (comp.sub_processors||[]).join('; ')||'Not found',
+          o.status_page_found===true?'Yes':'No', o.status_incidents||'None found',
+          o.layoffs===true?'Flagged':'None found', o.leadership_changes===true?'Flagged':'None found',
+          o.recent_breach===true?'Flagged':'None found',
+          c.pricing_model||'Not found', c.ownership_type||'Not found',
+          c.latest_round||'Not found', c.founded_year||'Not found',
+          `"${(r.summary||'').replace(/"/g,"'")}"`, d.scannedAt
         ]);
       });
-
-      const csv  = rows.map(r => r.join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url;
-      a.download = `vendor-scan-${new Date().toISOString().slice(0,10)}.csv`;
-      a.click();
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `vendor-scan-${new Date().toISOString().slice(0,10)}.csv`; a.click();
       URL.revokeObjectURL(url);
     }
 
-    // ── EXPORT: PDF ───────────────────────────────────────────────────────────
     function printReport() { window.print(); }
 
-    // ── EXPORT: EMAIL ─────────────────────────────────────────────────────────
     function sendEmail() {
-      const date      = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const date = new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'});
       const completed = allResults.filter(r => r.score !== undefined);
-      const subject   = `Vendor Risk Scan — ${completed.length} vendor${completed.length !== 1 ? 's' : ''} — ${date}`;
-      const stop  = completed.filter(r => r.score < 40);
-      const review= completed.filter(r => r.score >= 40 && r.score < 70);
-      const low   = completed.filter(r => r.score >= 70);
-
+      const subject = `Vendor Risk Scan — ${completed.length} vendor${completed.length!==1?'s':''} — ${date}`;
+      const stop = completed.filter(r => r.score < 40);
+      const review = completed.filter(r => r.score >= 40 && r.score < 70);
+      const low = completed.filter(r => r.score >= 70);
       let body = `VENDOR RISK SCAN — ${date}\nPostscript G&A Vendor Intelligence Tool\n${'─'.repeat(48)}\n\nSUMMARY\n${low.length} Low Risk  |  ${review.length} Review  |  ${stop.length} Stop\n\n`;
-
-      if (stop.length)   { body += `STOP — DO NOT PROCEED WITHOUT REVIEW\n`; stop.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
+      if (stop.length)   { body += `STOP\n`; stop.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
       if (review.length) { body += `REVIEW REQUIRED\n`; review.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
       if (low.length)    { body += `LOW RISK\n`; low.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
-
       body += `${'─'.repeat(48)}\n\nVENDOR DETAILS\n\n`;
       completed.forEach(d => {
-        const r = d.result, s = r.security || {}, o = r.operations || {}, c = r.commercial || {}, comp = r.compliance || {};
+        const r = d.result, s = r.security||{}, o = r.operations||{}, c = r.commercial||{}, comp = r.compliance||{};
         body += `${d.domain.toUpperCase()} — ${d.score}/100 — ${d.verdict}\n`;
-        body += `Security:    SOC 2: ${s.soc2 === true ? 'Yes' : '--'}  |  ISO 27001: ${s.iso27001 === true ? 'Yes' : '--'}  |  HIPAA: ${s.hipaa === true ? 'Yes' : '--'}\n`;
-        body += `Compliance:  GDPR: ${comp.gdpr_mechanism || '--'}  |  DPA: ${comp.dpa_available === true ? 'Yes' : '--'}  |  Residency: ${comp.data_residency || '--'}\n`;
-        body += `Operations:  Status page: ${o.status_page_found ? 'Yes' : 'No'}  |  Layoffs: ${o.layoffs === true ? 'Flagged' : 'None'}  |  Breach: ${o.recent_breach === true ? 'Flagged' : 'None'}\n`;
-        body += `Commercial:  Pricing: ${c.pricing_model || '--'}  |  Ownership: ${c.ownership_type || '--'}\n`;
+        body += `Security:    SOC 2: ${s.soc2===true?'Yes':'Not found'}  |  ISO 27001: ${s.iso27001===true?'Yes':'Not found'}  |  HIPAA: ${s.hipaa===true?'Yes':'Not found'}\n`;
+        body += `Compliance:  GDPR: ${comp.gdpr_mechanism||'Not found'}  |  DPA: ${comp.dpa_available===true?'Yes':'Not found'}  |  Residency: ${comp.data_residency||'Not found'}\n`;
+        body += `Operations:  Status page: ${o.status_page_found?'Yes':'No'}  |  Layoffs: ${o.layoffs===true?'Flagged':'None'}  |  Breach: ${o.recent_breach===true?'Flagged':'None'}\n`;
+        body += `Commercial:  Pricing: ${c.pricing_model||'Not found'}  |  Ownership: ${c.ownership_type||'Not found'}\n`;
         if (r.summary) body += `Summary: ${r.summary}\n`;
         if (r.recommended_actions?.length) { body += `Actions:\n`; r.recommended_actions.forEach(a => { body += `  → ${a}\n`; }); }
         body += '\n';
       });
       body += `${'─'.repeat(48)}\nGenerated by Postscript Vendor Intelligence Tool\nScanned: ${date}`;
-
       window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
   </script>
-
 </body>
 </html>
