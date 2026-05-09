@@ -9,35 +9,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --purple: #6D28D9;
-      --purple-light: #EDE9FE;
-      --purple-mid: #DDD6FE;
-      --black: #0D0D0D;
-      --white: #FFFFFF;
-      --bg: #F5F5F4;
-      --border: #E5E5E3;
-      --border-dark: #D1D1CE;
-      --text: #111110;
-      --text-dim: #57574F;
-      --text-muted: #A09F99;
-      --green: #15803D;
-      --amber: #92400E;
-      --red: #B91C1C;
-      --green-bg: #F0FDF4;
-      --amber-bg: #FFFBEB;
-      --red-bg: #FEF2F2;
-      --green-border: #BBF7D0;
-      --amber-border: #FDE68A;
-      --red-border: #FECACA;
-      --font: 'Inter', sans-serif;
-      --display: 'Bricolage Grotesque', sans-serif;
+      --purple: #6D28D9; --purple-light: #EDE9FE; --purple-mid: #DDD6FE;
+      --black: #0D0D0D; --white: #FFFFFF; --bg: #F5F5F4;
+      --border: #E5E5E3; --border-dark: #D1D1CE;
+      --text: #111110; --text-dim: #57574F; --text-muted: #A09F99;
+      --green: #15803D; --amber: #92400E; --red: #B91C1C;
+      --green-bg: #F0FDF4; --amber-bg: #FFFBEB; --red-bg: #FEF2F2;
+      --green-border: #BBF7D0; --amber-border: #FDE68A; --red-border: #FECACA;
+      --font: 'Inter', sans-serif; --display: 'Bricolage Grotesque', sans-serif;
     }
-
     html, body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; }
 
-    /* PASSWORD OVERLAY */
     .pw-overlay { position: fixed; inset: 0; background: var(--black); display: flex; align-items: center; justify-content: center; z-index: 9999; }
     .pw-overlay.hidden { display: none; }
     .pw-box { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 36px 40px; width: 340px; text-align: center; }
@@ -50,17 +33,18 @@
     .pw-btn:hover { opacity: 0.88; }
     .pw-error { color: #f87171; font-size: 12px; margin-top: 10px; min-height: 18px; }
 
-    /* HEADER */
     header { background: var(--black); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 52px; position: sticky; top: 0; z-index: 100; }
     .logo { display: flex; align-items: center; gap: 10px; }
     .logo-badge { background: var(--purple); color: white; font-family: var(--font); font-weight: 600; font-size: 13px; padding: 4px 10px; border-radius: 6px; }
     .logo-label { color: #888; font-size: 12px; font-weight: 500; }
     .header-pill { background: #1a1a1a; border: 1px solid #333; color: #888; font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
+    .nav-tabs { display: flex; gap: 2px; }
+    .nav-tab { color: #888; font-size: 12px; font-weight: 500; padding: 6px 16px; border-radius: 6px; cursor: pointer; border: none; background: transparent; font-family: var(--font); transition: all 0.15s; }
+    .nav-tab:hover { color: #fff; }
+    .nav-tab.active { background: #1a1a1a; color: #fff; border: 1px solid #333; }
 
-    /* LAYOUT */
-    .layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 52px); }
-
-    /* SIDEBAR */
+    .scan-layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 52px); }
+    .scan-layout.hidden { display: none; }
     .sidebar { background: var(--white); border-right: 1px solid var(--border); padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
     .sidebar-section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); }
     .sidebar-hint { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
@@ -80,10 +64,7 @@
     .slack-info { font-size: 11px; color: var(--text-muted); padding: 8px 10px; background: var(--bg); border-radius: 6px; line-height: 1.5; }
     .slack-info span { color: var(--green); font-weight: 600; }
 
-    /* MAIN */
     .content { padding: 24px 28px; overflow-y: auto; }
-
-    /* RISK BAR */
     .risk-bar { display: none; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; align-items: center; }
     .risk-bar.visible { display: flex; }
     .risk-bar-title { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-right: 20px; white-space: nowrap; }
@@ -97,13 +78,10 @@
     .progress-green { background: var(--green); transition: width 0.5s ease; }
     .progress-amber { background: var(--amber); transition: width 0.5s ease; }
     .progress-red { background: var(--red); transition: width 0.5s ease; }
-
-    /* EMPTY STATE */
     .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 320px; color: var(--text-muted); font-size: 13px; text-align: center; gap: 8px; }
     .empty-icon { font-size: 32px; margin-bottom: 4px; }
-
-    /* CARDS */
     .cards-list { display: flex; flex-direction: column; gap: 16px; }
+
     .vendor-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .card-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
     .card-domain { font-family: var(--display); font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 3px; letter-spacing: -0.01em; }
@@ -146,32 +124,22 @@
     .action-item { display: flex; gap: 7px; padding: 4px 0; font-size: 11.5px; color: var(--text-dim); line-height: 1.5; border-bottom: 1px solid var(--bg); }
     .action-item:last-child { border-bottom: none; }
     .action-arrow { color: var(--purple); flex-shrink: 0; font-weight: 600; }
-
-    /* MANUAL NOTE */
     .note-section { padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--bg); }
     .note-toggle { font-size: 11px; color: var(--purple); cursor: pointer; font-weight: 500; background: none; border: none; padding: 0; font-family: var(--font); }
-    .note-toggle:hover { opacity: 0.75; }
     .note-form { margin-top: 10px; display: none; flex-direction: column; gap: 7px; }
     .note-form.open { display: flex; }
     .note-input { width: 100%; background: var(--white); border: 1.5px solid var(--border-dark); border-radius: 5px; padding: 8px 10px; font-family: var(--font); font-size: 12px; color: var(--text); resize: vertical; min-height: 60px; outline: none; }
-    .note-input:focus { border-color: var(--purple); }
     .note-name { width: 100%; background: var(--white); border: 1.5px solid var(--border-dark); border-radius: 5px; padding: 7px 10px; font-family: var(--font); font-size: 12px; color: var(--text); outline: none; }
-    .note-name:focus { border-color: var(--purple); }
     .note-save-btn { align-self: flex-start; background: var(--purple); color: #fff; border: none; border-radius: 5px; padding: 7px 14px; font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
-    .note-save-btn:hover { opacity: 0.88; }
     .note-saved { font-size: 11px; color: var(--green); margin-top: 4px; display: none; }
     .existing-notes { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
     .existing-note { background: var(--white); border: 1px solid var(--border); border-radius: 5px; padding: 8px 10px; font-size: 11.5px; color: var(--text-dim); line-height: 1.5; }
     .existing-note-meta { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-
-    /* CARD FOOTER */
     .card-footer { display: flex; justify-content: space-between; align-items: center; padding: 8px 18px; background: var(--bg); font-size: 11px; color: var(--text-muted); gap: 16px; }
     .status-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
     .status-dot.success { background: var(--green); }
     .status-dot.partial { background: var(--amber); }
     .status-dot.failed { background: var(--red); }
-
-    /* LOADING / ERROR */
     .loading-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; display: flex; align-items: center; gap: 12px; color: var(--text-dim); font-size: 13px; }
     .spinner { width: 15px; height: 15px; border: 2px solid var(--border); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -179,15 +147,70 @@
     .card-anim { animation: fadeUp 0.3s ease; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* PRINT */
+    /* HISTORY PAGE */
+    .history-page { display: none; padding: 24px 28px; min-height: calc(100vh - 52px); }
+    .history-page.active { display: block; }
+    .history-filters { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .history-search { flex: 1; min-width: 180px; background: var(--white); border: 1.5px solid var(--border-dark); border-radius: 6px; padding: 8px 12px; font-family: var(--font); font-size: 13px; color: var(--text); outline: none; }
+    .history-search:focus { border-color: var(--purple); }
+    .h-select { background: var(--white); border: 1.5px solid var(--border-dark); border-radius: 6px; padding: 8px 10px; font-family: var(--font); font-size: 12px; color: var(--text); outline: none; cursor: pointer; }
+    .h-date { background: var(--white); border: 1.5px solid var(--border-dark); border-radius: 6px; padding: 7px 10px; font-family: var(--font); font-size: 12px; color: var(--text); outline: none; }
+    .bulk-bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; }
+    .bulk-count { font-size: 12px; color: var(--text-dim); flex: 1; }
+    .bulk-btn { background: transparent; border: 1.5px solid var(--border-dark); border-radius: 6px; padding: 6px 12px; font-family: var(--font); font-size: 12px; font-weight: 500; cursor: pointer; color: var(--text-dim); transition: all 0.15s; }
+    .bulk-btn:hover { border-color: var(--purple); color: var(--purple); }
+    .history-table { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .history-row { border-bottom: 1px solid var(--border); }
+    .history-row:last-child { border-bottom: none; }
+    .history-row-header { display: flex; align-items: center; gap: 12px; padding: 13px 18px; cursor: pointer; transition: background 0.1s; }
+    .history-row-header:hover { background: var(--bg); }
+    .h-domain { font-family: var(--display); font-size: 15px; font-weight: 800; flex: 1; color: var(--text); }
+    .h-score { font-family: var(--display); font-size: 22px; font-weight: 800; width: 48px; text-align: right; }
+    .h-score.green { color: var(--green); }
+    .h-score.amber { color: var(--amber); }
+    .h-score.red { color: var(--red); }
+    .h-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; width: 58px; text-align: center; flex-shrink: 0; }
+    .h-badge.green { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    .h-badge.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+    .h-badge.red { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+    .h-sig { font-size: 11px; color: var(--text-dim); width: 76px; flex-shrink: 0; }
+    .h-sig .yes { color: var(--green); font-weight: 600; }
+    .h-date { font-size: 11px; color: var(--text-muted); width: 140px; text-align: right; flex-shrink: 0; }
+    .h-chev { font-size: 11px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; }
+    .h-chev.open { transform: rotate(180deg); }
+    .h-card-wrap { display: none; border-top: 1px solid var(--border); }
+    .h-card-wrap.open { display: block; }
+    .history-empty { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 13px; }
+    .history-loading { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+    /* TIMELINE */
+    .timeline-section { padding: 14px 18px; border-top: 1px solid var(--border); background: var(--bg); }
+    .timeline-toggle { font-size: 11px; color: var(--purple); cursor: pointer; font-weight: 500; background: none; border: none; padding: 0; font-family: var(--font); }
+    .timeline-toggle:hover { opacity: 0.75; }
+    .timeline-list { margin-top: 12px; display: flex; flex-direction: column; }
+    .tl-entry { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .tl-entry:last-child { border-bottom: none; }
+    .tl-dot-col { display: flex; flex-direction: column; align-items: center; width: 14px; }
+    .tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+    .tl-dot.green { background: var(--green); }
+    .tl-dot.amber { background: var(--amber); }
+    .tl-dot.red { background: var(--red); }
+    .tl-line { width: 1px; flex: 1; background: var(--border); margin-top: 4px; }
+    .tl-content { flex: 1; }
+    .tl-date { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+    .tl-score { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .tl-changes { display: flex; flex-direction: column; gap: 2px; }
+    .tl-change { font-size: 11px; color: var(--text-dim); }
+    .tl-change.pos { color: var(--green); }
+    .tl-change.neg { color: var(--red); }
+
     @media print {
-      .pw-overlay, header, .sidebar, .risk-bar, .empty-state { display: none !important; }
-      .layout { display: block; }
+      .pw-overlay, header, .sidebar, .risk-bar, .empty-state, .history-filters, .bulk-bar { display: none !important; }
+      .scan-layout { display: block; }
       .content { padding: 0; }
       .vendor-card { break-inside: avoid; border: 1px solid #ccc; }
       .card-footer, .note-form, .note-toggle, .note-save-btn, .loading-card, .error-card { display: none !important; }
       body { font-size: 12px; background: white; }
-      .score-number { font-size: 28px; }
     }
   </style>
 </head>
@@ -209,10 +232,15 @@
       <span class="logo-badge">Postscript</span>
       <span class="logo-label">Vendor Intelligence</span>
     </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-scan" onclick="showPage('scan')">Scan</button>
+      <button class="nav-tab" id="tab-history" onclick="showPage('history')">History</button>
+    </div>
     <div class="header-pill">G&A Internal Tool</div>
   </header>
 
-  <div class="layout">
+  <!-- SCAN PAGE -->
+  <div class="scan-layout" id="scanLayout">
     <aside class="sidebar">
       <div class="sidebar-section-label">Domains to scan</div>
       <div class="sidebar-hint">One domain per line. Results appear as each vendor is scanned.</div>
@@ -227,7 +255,6 @@
         <div class="slack-info"><span>✓ Slack</span> — results auto-posted to #postscript_vendor_intelligence after every scan</div>
       </div>
     </aside>
-
     <div class="content" id="content">
       <div class="risk-bar" id="riskBar">
         <div class="risk-bar-title">Scan summary</div>
@@ -251,6 +278,36 @@
     </div>
   </div>
 
+  <!-- HISTORY PAGE -->
+  <div class="history-page" id="historyPage">
+    <div class="history-filters">
+      <input class="history-search" id="historySearch" placeholder="Search domains..." oninput="renderHistory()" />
+      <select class="h-select" id="historyStatus" onchange="renderHistory()">
+        <option value="">All statuses</option>
+        <option value="LOW RISK">Low risk</option>
+        <option value="REVIEW">Review</option>
+        <option value="STOP">Stop</option>
+      </select>
+      <input class="h-date" id="historyFrom" type="date" onchange="renderHistory()" title="From date" />
+      <input class="h-date" id="historyTo" type="date" onchange="renderHistory()" title="To date" />
+      <select class="h-select" id="historyLimit" onchange="renderHistory()">
+        <option value="10">Last 10</option>
+        <option value="20" selected>Last 20</option>
+        <option value="50">Last 50</option>
+        <option value="999">All</option>
+      </select>
+    </div>
+    <div class="bulk-bar">
+      <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll()" style="cursor:pointer" />
+      <span class="bulk-count" id="bulkCount">Loading...</span>
+      <button class="bulk-btn" onclick="exportHistoryCSV()">↓ Export CSV</button>
+      <button class="bulk-btn" onclick="exportHistoryPDF()">⎙ Export PDF</button>
+    </div>
+    <div class="history-table" id="historyTableBody">
+      <div class="history-loading"><div class="spinner"></div> Loading scan history...</div>
+    </div>
+  </div>
+
   <script>
     const APP_PASSWORD = 'postscript2026';
     function checkPassword() {
@@ -258,6 +315,7 @@
       if (val === APP_PASSWORD) {
         sessionStorage.setItem('vi_auth', '1');
         document.getElementById('pwOverlay').classList.add('hidden');
+        loadHistory();
       } else {
         document.getElementById('pwError').textContent = 'Incorrect password.';
         document.getElementById('pwInput').value = '';
@@ -265,21 +323,36 @@
       }
     }
     document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
-    if (sessionStorage.getItem('vi_auth') === '1') document.getElementById('pwOverlay').classList.add('hidden');
+    if (sessionStorage.getItem('vi_auth') === '1') {
+      document.getElementById('pwOverlay').classList.add('hidden');
+      loadHistory();
+    }
 
-    const input      = document.getElementById('domainInput');
-    const btn        = document.getElementById('scanBtn');
-    const cardsList  = document.getElementById('cardsList');
+    // STATE
+    const input = document.getElementById('domainInput');
+    const btn = document.getElementById('scanBtn');
+    const cardsList = document.getElementById('cardsList');
     const emptyState = document.getElementById('emptyState');
-    const queueStatus= document.getElementById('queueStatus');
-    const riskBar    = document.getElementById('riskBar');
+    const queueStatus = document.getElementById('queueStatus');
+    const riskBar = document.getElementById('riskBar');
     const actionBtns = document.getElementById('actionBtns');
     let allResults = [];
+    let historyData = [];
+    let selectedRows = new Set();
 
+    // PAGE NAVIGATION
+    function showPage(page) {
+      document.getElementById('scanLayout').classList.toggle('hidden', page !== 'scan');
+      document.getElementById('historyPage').classList.toggle('active', page === 'history');
+      document.getElementById('tab-scan').classList.toggle('active', page === 'scan');
+      document.getElementById('tab-history').classList.toggle('active', page === 'history');
+      if (page === 'history') renderHistory();
+    }
+
+    // HELPERS
     function scoreClass(s) { return s >= 70 ? 'green' : s >= 40 ? 'amber' : 'red'; }
-
     function sig(val) {
-      if (val === true)  return `<span class="sv yes">Yes</span>`;
+      if (val === true) return `<span class="sv yes">Yes</span>`;
       if (val === false) return `<span class="sv no">No</span>`;
       return `<span class="sv dim">Not found in public data</span>`;
     }
@@ -304,76 +377,52 @@
     function formatDate(iso) {
       return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
+    function formatDateFull(iso) {
+      return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
 
+    // RISK BAR
     function updateRiskBar() {
       const done = allResults.filter(r => r && r.score !== undefined);
       if (!done.length) return;
       const green = done.filter(r => r.score >= 70).length;
       const amber = done.filter(r => r.score >= 40 && r.score < 70).length;
-      const red   = done.filter(r => r.score < 40).length;
+      const red = done.filter(r => r.score < 40).length;
       const total = done.length;
       document.getElementById('numGreen').textContent = green;
       document.getElementById('numAmber').textContent = amber;
-      document.getElementById('numRed').textContent   = red;
+      document.getElementById('numRed').textContent = red;
       document.getElementById('progGreen').style.width = `${(green/total)*100}%`;
       document.getElementById('progAmber').style.width = `${(amber/total)*100}%`;
-      document.getElementById('progRed').style.width   = `${(red/total)*100}%`;
+      document.getElementById('progRed').style.width = `${(red/total)*100}%`;
       riskBar.classList.add('visible');
     }
 
+    // CARD BUILDER
     function buildCard(data) {
-      const r   = data.result;
+      const r = data.result;
       const cls = scoreClass(data.score);
-      const s   = r.security   || {};
-      const o   = r.operations || {};
-      const c   = r.commercial || {};
-      const comp= r.compliance || {};
-
-      const actions = (r.recommended_actions || [])
-        .map(a => `<div class="action-item"><span class="action-arrow">→</span><span>${a}</span></div>`)
-        .join('');
-
+      const s = r.security || {};
+      const o = r.operations || {};
+      const c = r.commercial || {};
+      const comp = r.compliance || {};
+      const actions = (r.recommended_actions || []).map(a => `<div class="action-item"><span class="action-arrow">→</span><span>${a}</span></div>`).join('');
       const hasVuln = s.notes && (s.notes.toLowerCase().includes('cve') || s.notes.toLowerCase().includes('breach'));
       const vulnBar = hasVuln ? `<div class="vuln-bar">⚠ <span>${s.notes}</span></div>` : '';
       const scrapeStatus = r.scrape_status || 'success';
-      const safeDomain   = data.domain.replace(/[^a-zA-Z0-9.-]/g, '_');
-
+      const safeDomain = data.domain.replace(/[^a-zA-Z0-9.-]/g, '_');
       const subProcs = comp.sub_processors || [];
-      const subProcsHtml = subProcs.length > 0
-        ? `<div class="detail-note">${subProcs.join(', ')}</div>`
-        : `<div class="detail-note dim-text">Not found in public data</div>`;
-
-      const incidentsHtml = o.status_incidents
-        ? `<div class="detail-note">${o.status_incidents}</div>`
-        : `<div class="detail-note dim-text">No incidents found in public data</div>`;
-
-      const renewalHtml = data.renewalDiff ? `
-        <div class="renewal-diff">
-          <div class="renewal-diff-title">↻ Changes since last scan (${new Date(data.renewalDiff.previousScannedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})</div>
-          ${data.renewalDiff.changes.map(ch => `<div class="renewal-diff-item">• ${ch}</div>`).join('')}
-        </div>` : '';
-
-      const expiryHtml = data.expiryFlag && data.expiryDays !== null ? `
-        <div class="expiry-banner">⚠ ${data.expiryDays > 0
-          ? `SOC 2 expiring in <strong>${data.expiryDays} days</strong>`
-          : `SOC 2 certificate has <strong>expired</strong>`} — request updated certificate before signing.
-        </div>` : '';
-
+      const subProcsHtml = subProcs.length > 0 ? `<div class="detail-note">${subProcs.join(', ')}</div>` : `<div class="detail-note dim-text">Not found in public data</div>`;
+      const incidentsHtml = o.status_incidents ? `<div class="detail-note">${o.status_incidents}</div>` : `<div class="detail-note dim-text">No incidents found in public data</div>`;
+      const renewalHtml = data.renewalDiff ? `<div class="renewal-diff"><div class="renewal-diff-title">↻ Changes since last scan (${new Date(data.renewalDiff.previousScannedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})</div>${data.renewalDiff.changes.map(ch => `<div class="renewal-diff-item">• ${ch}</div>`).join('')}</div>` : '';
+      const expiryHtml = data.expiryFlag && data.expiryDays !== null ? `<div class="expiry-banner">⚠ ${data.expiryDays > 0 ? `SOC 2 expiring in <strong>${data.expiryDays} days</strong>` : `SOC 2 certificate has <strong>expired</strong>`} — request updated certificate before signing.</div>` : '';
       return `
         <div class="vendor-card card-anim" id="card-${safeDomain}">
           <div class="card-header">
-            <div>
-              <div class="card-domain">${data.domain}</div>
-              <div class="card-scanned">Scanned ${formatDate(data.scannedAt)}</div>
-            </div>
-            <div class="score-block">
-              <div class="score-number ${cls}">${data.score}</div>
-              <div class="verdict-badge ${cls}">${data.verdict}</div>
-            </div>
+            <div><div class="card-domain">${data.domain}</div><div class="card-scanned">Scanned ${formatDate(data.scannedAt)}</div></div>
+            <div class="score-block"><div class="score-number ${cls}">${data.score}</div><div class="verdict-badge ${cls}">${data.verdict}</div></div>
           </div>
-
           ${expiryHtml}${vulnBar}${renewalHtml}
-
           <div class="signal-grid">
             <div class="signal-box">
               <div class="signal-label">Security <span class="source-badge">vendor trust page</span></div>
@@ -413,69 +462,54 @@
               <div class="signal-row"><span class="signal-key">Founded</span>${c.founded_year ? `<span class="sv neutral">${c.founded_year}</span>` : `<span class="sv dim">Not found in public data</span>`}</div>
             </div>
           </div>
-
           <div class="card-bottom">
-            <div class="card-summary">
-              <div class="section-label">CFO Summary</div>
-              <div class="summary-text">${r.summary || 'No summary available.'}</div>
-            </div>
-            <div class="card-actions">
-              <div class="section-label">Recommended Actions</div>
-              ${actions || '<div class="action-item"><span class="action-arrow">→</span><span>No actions flagged.</span></div>'}
-            </div>
+            <div class="card-summary"><div class="section-label">CFO Summary</div><div class="summary-text">${r.summary || 'No summary available.'}</div></div>
+            <div class="card-actions"><div class="section-label">Recommended Actions</div>${actions || '<div class="action-item"><span class="action-arrow">→</span><span>No actions flagged.</span></div>'}</div>
           </div>
-
           <div class="note-section" id="note-section-${safeDomain}">
             <button class="note-toggle" onclick="toggleNote('${safeDomain}')">+ Add reviewer note</button>
             <div class="note-form" id="note-form-${safeDomain}">
-              <textarea class="note-input" id="note-text-${safeDomain}" placeholder="Add a note for the team — e.g. Requested SOC 2 cert from vendor on 8 May 2026"></textarea>
+              <textarea class="note-input" id="note-text-${safeDomain}" placeholder="Add a note for the team — e.g. Requested SOC 2 cert from vendor on 9 May 2026"></textarea>
               <input class="note-name" id="note-name-${safeDomain}" type="text" placeholder="Your name (optional)" />
               <button class="note-save-btn" onclick="saveNote('${data.domain}', '${safeDomain}')">Save note</button>
               <div class="note-saved" id="note-saved-${safeDomain}">Saved.</div>
             </div>
             <div class="existing-notes" id="existing-notes-${safeDomain}"></div>
           </div>
-
           <div class="card-footer">
             <span><span class="status-dot ${scrapeStatus}"></span>Scrape: ${scrapeStatus}</span>
             <span style="text-align:right;max-width:70%">${r.scrape_notes || ''}</span>
           </div>
-        </div>
-      `;
+        </div>`;
     }
 
-    function toggleNote(safeDomain) {
-      const form = document.getElementById(`note-form-${safeDomain}`);
+    function toggleNote(sd) {
+      const form = document.getElementById(`note-form-${sd}`);
       form.classList.toggle('open');
-      if (form.classList.contains('open')) document.getElementById(`note-text-${safeDomain}`).focus();
+      if (form.classList.contains('open')) document.getElementById(`note-text-${sd}`).focus();
     }
 
-    async function saveNote(domain, safeDomain) {
-      const note   = document.getElementById(`note-text-${safeDomain}`).value.trim();
-      const editor = document.getElementById(`note-name-${safeDomain}`).value.trim() || 'Team member';
+    async function saveNote(domain, sd) {
+      const note = document.getElementById(`note-text-${sd}`).value.trim();
+      const editor = document.getElementById(`note-name-${sd}`).value.trim() || 'Team member';
       if (!note) return;
       try {
-        const res = await fetch('/api/manual-edit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ domain, note, editor })
-        });
+        const res = await fetch('/api/manual-edit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain, note, editor }) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Save failed');
-        document.getElementById(`note-saved-${safeDomain}`).style.display = 'block';
-        setTimeout(() => { document.getElementById(`note-saved-${safeDomain}`).style.display = 'none'; }, 3000);
-        const container = document.getElementById(`existing-notes-${safeDomain}`);
+        document.getElementById(`note-saved-${sd}`).style.display = 'block';
+        setTimeout(() => { document.getElementById(`note-saved-${sd}`).style.display = 'none'; }, 3000);
+        const container = document.getElementById(`existing-notes-${sd}`);
         const noteEl = document.createElement('div');
         noteEl.className = 'existing-note';
         noteEl.innerHTML = `${note}<div class="existing-note-meta">Added by ${editor} — ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>`;
         container.appendChild(noteEl);
-        document.getElementById(`note-text-${safeDomain}`).value = '';
-        document.getElementById(`note-form-${safeDomain}`).classList.remove('open');
-      } catch (err) {
-        alert(`Could not save note: ${err.message}`);
-      }
+        document.getElementById(`note-text-${sd}`).value = '';
+        document.getElementById(`note-form-${sd}`).classList.remove('open');
+      } catch (err) { alert(`Could not save note: ${err.message}`); }
     }
 
+    // SCAN
     async function scanDomain(domain, idx, total) {
       queueStatus.innerHTML = `Scanning <b>${idx + 1} of ${total}</b>: ${domain}`;
       const loadingEl = document.createElement('div');
@@ -483,7 +517,7 @@
       loadingEl.innerHTML = `<div class="spinner"></div><span>Scanning ${domain}...</span>`;
       cardsList.appendChild(loadingEl);
       try {
-        const res  = await fetch('/api/vendor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain }) });
+        const res = await fetch('/api/vendor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain }) });
         const data = await res.json();
         if (!res.ok || !data.result) throw new Error(data.error || 'Scan failed');
         allResults.push(data);
@@ -491,6 +525,7 @@
         const wrapper = document.createElement('div');
         wrapper.innerHTML = buildCard(data);
         loadingEl.replaceWith(wrapper.firstElementChild);
+        historyData.unshift({ domain: data.domain, score: data.score, verdict: data.verdict, scanned_at: data.scannedAt, result: data.result, expiry_flag: data.expiryFlag, expiry_days: data.expiryDays });
       } catch (err) {
         allResults.push({ domain, error: err.message });
         loadingEl.outerHTML = `<div class="error-card"><b>${domain}:</b> ${err.message}</div>`;
@@ -514,26 +549,159 @@
       if (allResults.length > 0) actionBtns.classList.add('visible');
     }
 
+    // HISTORY
+    async function loadHistory() {
+      try {
+        const r = await fetch('/api/history');
+        if (!r.ok) return;
+        const data = await r.json();
+        historyData = data.scans || [];
+        if (document.getElementById('historyPage').classList.contains('active')) renderHistory();
+      } catch (err) { console.error('History load failed:', err); }
+    }
+
+    function getFilteredHistory() {
+      const search = document.getElementById('historySearch').value.toLowerCase();
+      const status = document.getElementById('historyStatus').value;
+      const fromDate = document.getElementById('historyFrom').value;
+      const toDate = document.getElementById('historyTo').value;
+      const limit = parseInt(document.getElementById('historyLimit').value) || 999;
+      const byDomain = {};
+      historyData.forEach(scan => {
+        if (!byDomain[scan.domain] || scan.scanned_at > byDomain[scan.domain].scanned_at) byDomain[scan.domain] = scan;
+      });
+      let rows = Object.values(byDomain);
+      if (search) rows = rows.filter(r => r.domain.toLowerCase().includes(search));
+      if (status) rows = rows.filter(r => r.verdict === status);
+      if (fromDate) rows = rows.filter(r => r.scanned_at >= fromDate);
+      if (toDate) rows = rows.filter(r => r.scanned_at <= toDate + 'T23:59:59');
+      rows.sort((a, b) => b.scanned_at.localeCompare(a.scanned_at));
+      return rows.slice(0, limit);
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyTableBody');
+      const rows = getFilteredHistory();
+      updateBulkBar(rows.length);
+      if (!historyData.length) {
+        container.innerHTML = '<div class="history-empty">No scans recorded yet. Run a scan to see history here.</div>';
+        return;
+      }
+      if (!rows.length) {
+        container.innerHTML = '<div class="history-empty">No results match your filters.</div>';
+        return;
+      }
+      container.innerHTML = rows.map(scan => {
+        const cls = scan.score >= 70 ? 'green' : scan.score >= 40 ? 'amber' : 'red';
+        const s = (scan.result || {}).security || {};
+        const sd = scan.domain.replace(/[^a-zA-Z0-9.-]/g, '_');
+        return `
+          <div class="history-row" id="hrow-${sd}">
+            <div class="history-row-header" onclick="toggleHistoryRow('${scan.domain}','${sd}')">
+              <input type="checkbox" onclick="event.stopPropagation();toggleSelect('${scan.domain}')" ${selectedRows.has(scan.domain) ? 'checked' : ''} style="cursor:pointer;flex-shrink:0" />
+              <div class="h-domain">${scan.domain}</div>
+              <div class="h-score ${cls}">${scan.score}</div>
+              <div class="h-badge ${cls}">${scan.verdict}</div>
+              <div class="h-sig">SOC2: ${s.soc2 === true ? '<span class="yes">Yes</span>' : '<span style="color:var(--text-muted)">--</span>'}</div>
+              <div class="h-sig">ISO: ${s.iso27001 === true ? '<span class="yes">Yes</span>' : '<span style="color:var(--text-muted)">--</span>'}</div>
+              <div class="h-date">${formatDateFull(scan.scanned_at)}</div>
+              <div class="h-chev" id="hchev-${sd}">▼</div>
+            </div>
+            <div class="h-card-wrap" id="hwrap-${sd}"></div>
+          </div>`;
+      }).join('');
+    }
+
+    function toggleHistoryRow(domain, sd) {
+      const wrap = document.getElementById(`hwrap-${sd}`);
+      const chev = document.getElementById(`hchev-${sd}`);
+      if (wrap.classList.contains('open')) { wrap.classList.remove('open'); chev.classList.remove('open'); return; }
+      document.querySelectorAll('.h-card-wrap.open').forEach(el => el.classList.remove('open'));
+      document.querySelectorAll('.h-chev.open').forEach(el => el.classList.remove('open'));
+      wrap.classList.add('open');
+      chev.classList.add('open');
+      const byDomain = {};
+      historyData.forEach(s => { if (!byDomain[domain] || s.scanned_at > byDomain[domain].scanned_at) byDomain[domain] = s; });
+      const scan = byDomain[domain];
+      if (!scan) return;
+      const cardData = { domain: scan.domain, score: scan.score, verdict: scan.verdict, scannedAt: scan.scanned_at, expiryFlag: scan.expiry_flag, expiryDays: scan.expiry_days, renewalDiff: null, result: scan.result || {} };
+      const cardHtml = buildCard(cardData).replace('<div class="vendor-card card-anim"', '<div class="vendor-card" style="border-radius:0;border:none"');
+      wrap.innerHTML = `${cardHtml}<div class="timeline-section"><button class="timeline-toggle" id="tl-btn-${sd}" onclick="toggleTimeline('${domain}','${sd}')">↓ Show scan history for ${domain}</button><div id="tl-${sd}" style="display:none"></div></div>`;
+    }
+
+    function toggleTimeline(domain, sd) {
+      const container = document.getElementById(`tl-${sd}`);
+      const btn = document.getElementById(`tl-btn-${sd}`);
+      if (container.style.display !== 'none') { container.style.display = 'none'; btn.textContent = `↓ Show scan history for ${domain}`; return; }
+      container.style.display = 'block';
+      btn.textContent = `↑ Hide scan history`;
+      const scans = historyData.filter(s => s.domain === domain).sort((a, b) => b.scanned_at.localeCompare(a.scanned_at));
+      if (scans.length <= 1) { container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Only one scan recorded. Rescan this domain to track changes over time.</div>'; return; }
+      container.innerHTML = `<div class="timeline-list">${scans.map((scan, i) => {
+        const cls = scan.score >= 70 ? 'green' : scan.score >= 40 ? 'amber' : 'red';
+        const prev = scans[i + 1];
+        const changes = prev ? getDiffs(scan, prev) : [];
+        const isLast = i === scans.length - 1;
+        return `<div class="tl-entry"><div class="tl-dot-col"><div class="tl-dot ${cls}"></div>${!isLast ? '<div class="tl-line"></div>' : ''}</div><div class="tl-content"><div class="tl-date">${formatDateFull(scan.scanned_at)}${i === 0 ? ' — most recent' : ''}</div><div class="tl-score" style="color:var(--${cls === 'green' ? 'green' : cls === 'amber' ? 'amber' : 'red'})">${scan.score}/100 — ${scan.verdict}</div>${changes.length > 0 ? `<div class="tl-changes">${changes.map(c => `<div class="tl-change ${c.type}">• ${c.text}</div>`).join('')}</div>` : i > 0 ? '<div class="tl-change" style="color:var(--text-muted)">• No changes detected</div>' : ''}</div></div>`;
+      }).join('')}</div>`;
+    }
+
+    function getDiffs(curr, prev) {
+      const changes = [];
+      const cs = curr.result?.security || {}, ps = prev.result?.security || {};
+      const cc = curr.result?.commercial || {}, pc = prev.result?.commercial || {};
+      const co = curr.result?.operations || {}, po = prev.result?.operations || {};
+      const diff = curr.score - prev.score;
+      if (Math.abs(diff) >= 5) changes.push({ type: diff > 0 ? 'pos' : 'neg', text: `Score ${diff > 0 ? '+' : ''}${diff} (${prev.score} → ${curr.score})` });
+      if (cs.soc2 !== ps.soc2 && ps.soc2 !== undefined) changes.push({ type: cs.soc2 ? 'pos' : 'neg', text: `SOC 2 ${cs.soc2 ? 'confirmed' : 'no longer found'}` });
+      if (cs.iso27001 !== ps.iso27001 && ps.iso27001 !== undefined) changes.push({ type: cs.iso27001 ? 'pos' : 'neg', text: `ISO 27001 ${cs.iso27001 ? 'confirmed' : 'no longer found'}` });
+      if (cc.ownership_type !== pc.ownership_type && pc.ownership_type && cc.ownership_type && pc.ownership_type !== 'unknown' && cc.ownership_type !== 'unknown') changes.push({ type: 'neg', text: `Ownership changed: ${pc.ownership_type} → ${cc.ownership_type}` });
+      if (!po.recent_breach && co.recent_breach) changes.push({ type: 'neg', text: 'Breach detected since last scan' });
+      if (!po.layoffs && co.layoffs) changes.push({ type: 'neg', text: 'Layoffs reported since last scan' });
+      return changes;
+    }
+
+    function toggleSelect(domain) {
+      if (selectedRows.has(domain)) selectedRows.delete(domain); else selectedRows.add(domain);
+      updateBulkBar(getFilteredHistory().length);
+    }
+
+    function toggleSelectAll() {
+      const rows = getFilteredHistory();
+      const allSel = rows.every(r => selectedRows.has(r.domain));
+      if (allSel) rows.forEach(r => selectedRows.delete(r.domain)); else rows.forEach(r => selectedRows.add(r.domain));
+      renderHistory();
+    }
+
+    function updateBulkBar(total) {
+      document.getElementById('bulkCount').textContent = selectedRows.size > 0 ? `${selectedRows.size} of ${total} selected` : `${total} vendor${total !== 1 ? 's' : ''} in history`;
+    }
+
+    function exportHistoryCSV() {
+      const rows = getFilteredHistory();
+      const toExp = selectedRows.size > 0 ? rows.filter(r => selectedRows.has(r.domain)) : rows;
+      const csvRows = [['Domain','Score','Verdict','SOC2','SOC2 Type','ISO27001','HIPAA','FedRAMP','GDPR','DPA','Data Residency','Privacy Updated','Sub-processors','Status Page','Incidents','Layoffs','Breach','Pricing','Ownership','Latest Round','Founded','Scanned At']];
+      toExp.forEach(scan => {
+        const r = scan.result || {}, s = r.security || {}, o = r.operations || {}, c = r.commercial || {}, comp = r.compliance || {};
+        csvRows.push([scan.domain, scan.score, scan.verdict, s.soc2 === true ? 'Yes' : 'Not found', s.soc2_type || '--', s.iso27001 === true ? 'Yes' : 'Not found', s.hipaa === true ? 'Yes' : 'Not found', s.fedramp === true ? 'Yes' : 'Not found', comp.gdpr_mechanism || 'Not found', comp.dpa_available === true ? 'Yes' : 'Not found', comp.data_residency || 'Not found', comp.privacy_policy_updated || '--', (comp.sub_processors || []).join('; ') || 'Not found', o.status_page_found ? 'Yes' : 'No', o.status_incidents || 'None', o.layoffs === true ? 'Flagged' : 'None', o.recent_breach === true ? 'Flagged' : 'None', c.pricing_model || 'Not found', c.ownership_type || 'Not found', c.latest_round || '--', c.founded_year || '--', formatDateFull(scan.scanned_at)]);
+      });
+      const csv = csvRows.map(r => r.map(v => `"${String(v).replace(/"/g, "'"")}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `vendor-history-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportHistoryPDF() { window.print(); }
+
+    // SCAN EXPORTS
     function exportCSV() {
-      const rows = [['Domain','Score','Verdict','SOC2','SOC2 Type','ISO27001','HIPAA','FedRAMP','GDPR Mechanism','DPA','Data Residency','Privacy Updated','Sub-processors','Status Page','Incidents','Layoffs','Leadership','Breach','Pricing','Ownership','Latest Round','Founded','Summary','Scanned At']];
+      const rows = [['Domain','Score','Verdict','SOC2','SOC2 Type','ISO27001','HIPAA','FedRAMP','GDPR','DPA','Data Residency','Privacy Updated','Sub-processors','Status Page','Incidents','Layoffs','Leadership','Breach','Pricing','Ownership','Latest Round','Founded','Summary','Scanned At']];
       allResults.forEach(d => {
         if (d.error) { rows.push([d.domain,'ERROR',d.error,...Array(21).fill('')]); return; }
         const r = d.result, s = r.security||{}, o = r.operations||{}, c = r.commercial||{}, comp = r.compliance||{};
-        rows.push([d.domain, d.score, d.verdict,
-          s.soc2===true?'Yes':s.soc2===false?'No':'Not found', s.soc2_type||'Not found',
-          s.iso27001===true?'Yes':s.iso27001===false?'No':'Not found',
-          s.hipaa===true?'Yes':s.hipaa===false?'No':'Not found',
-          s.fedramp===true?'Yes':s.fedramp===false?'No':'Not found',
-          comp.gdpr_mechanism||'Not found', comp.dpa_available===true?'Yes':comp.dpa_available===false?'No':'Not found',
-          comp.data_residency||'Not found', comp.privacy_policy_updated||'Not published',
-          (comp.sub_processors||[]).join('; ')||'Not found',
-          o.status_page_found===true?'Yes':'No', o.status_incidents||'None found',
-          o.layoffs===true?'Flagged':'None found', o.leadership_changes===true?'Flagged':'None found',
-          o.recent_breach===true?'Flagged':'None found',
-          c.pricing_model||'Not found', c.ownership_type||'Not found',
-          c.latest_round||'Not found', c.founded_year||'Not found',
-          `"${(r.summary||'').replace(/"/g,"'")}"`, d.scannedAt
-        ]);
+        rows.push([d.domain, d.score, d.verdict, s.soc2===true?'Yes':'Not found', s.soc2_type||'--', s.iso27001===true?'Yes':'Not found', s.hipaa===true?'Yes':'Not found', s.fedramp===true?'Yes':'Not found', comp.gdpr_mechanism||'Not found', comp.dpa_available===true?'Yes':'Not found', comp.data_residency||'Not found', comp.privacy_policy_updated||'--', (comp.sub_processors||[]).join('; ')||'Not found', o.status_page_found?'Yes':'No', o.status_incidents||'None', o.layoffs===true?'Flagged':'None', o.leadership_changes===true?'Flagged':'None', o.recent_breach===true?'Flagged':'None', c.pricing_model||'Not found', c.ownership_type||'Not found', c.latest_round||'--', c.founded_year||'--', `"${(r.summary||'').replace(/"/g,"'")}"`, d.scannedAt]);
       });
       const csv = rows.map(r => r.join(',')).join('\n');
       const blob = new Blob([csv], {type:'text/csv'});
@@ -549,13 +717,11 @@
       const date = new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'});
       const completed = allResults.filter(r => r.score !== undefined);
       const subject = `Vendor Risk Scan — ${completed.length} vendor${completed.length!==1?'s':''} — ${date}`;
-      const stop = completed.filter(r => r.score < 40);
-      const review = completed.filter(r => r.score >= 40 && r.score < 70);
-      const low = completed.filter(r => r.score >= 70);
+      const stop = completed.filter(r => r.score < 40), review = completed.filter(r => r.score >= 40 && r.score < 70), low = completed.filter(r => r.score >= 70);
       let body = `VENDOR RISK SCAN — ${date}\nPostscript G&A Vendor Intelligence Tool\n${'─'.repeat(48)}\n\nSUMMARY\n${low.length} Low Risk  |  ${review.length} Review  |  ${stop.length} Stop\n\n`;
-      if (stop.length)   { body += `STOP\n`; stop.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
+      if (stop.length) { body += `STOP\n`; stop.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
       if (review.length) { body += `REVIEW REQUIRED\n`; review.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
-      if (low.length)    { body += `LOW RISK\n`; low.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
+      if (low.length) { body += `LOW RISK\n`; low.forEach(d => { body += `  • ${d.domain} — Score: ${d.score}\n`; }); body += '\n'; }
       body += `${'─'.repeat(48)}\n\nVENDOR DETAILS\n\n`;
       completed.forEach(d => {
         const r = d.result, s = r.security||{}, o = r.operations||{}, c = r.commercial||{}, comp = r.compliance||{};
