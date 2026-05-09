@@ -467,7 +467,7 @@
         const container = document.getElementById(`existing-notes-${safeDomain}`);
         const noteEl = document.createElement('div');
         noteEl.className = 'existing-note';
-        noteEl.innerHTML = `${note}<div class="existing-note-meta">Added by ${editor} — just now</div>`;
+        noteEl.innerHTML = `${note}<div class="existing-note-meta">Added by ${editor} — ${new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>`;
         container.appendChild(noteEl);
         document.getElementById(`note-text-${safeDomain}`).value = '';
         document.getElementById(`note-form-${safeDomain}`).classList.remove('open');
