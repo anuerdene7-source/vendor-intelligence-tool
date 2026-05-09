@@ -452,7 +452,7 @@ ${snippets.slice(0, 6000)}`;
     console.error('Cert fallback failed:', err.message);
     toolsLog.push(`Cert fallback: FAILED — ${err.message}`);
   }
-
+}
     } catch (err) {
       console.error('Claude API error:', err.message);
       errorCode = errorCode || 'EXTRACTION_FAILED';
