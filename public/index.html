@@ -346,7 +346,7 @@
       document.getElementById('historyPage').classList.toggle('active', page === 'history');
       document.getElementById('tab-scan').classList.toggle('active', page === 'scan');
       document.getElementById('tab-history').classList.toggle('active', page === 'history');
-      if (page === 'history') renderHistory();
+      if (page === 'history') loadHistory();
     }
 
     // HELPERS
@@ -556,7 +556,7 @@
         if (!r.ok) return;
         const data = await r.json();
         historyData = data.scans || [];
-        if (document.getElementById('historyPage').classList.contains('active')) renderHistory();
+        renderHistory();
       } catch (err) { console.error('History load failed:', err); }
     }
 
